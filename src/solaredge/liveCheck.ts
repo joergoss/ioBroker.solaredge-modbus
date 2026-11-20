@@ -41,6 +41,15 @@ async function main(): Promise<void> {
 		read_power_control: true,
 	} as ioBroker.AdapterConfig;
 
+	// run auto detection first, exactly like a freshly configured instance
+	try {
+		const detected = await modbus.detectDevices(config);
+		modbus.detectedDevices = detected;
+		console.log(`detected: meters [${detected.meters.join(",")}], batteries [${detected.batteries.join(",")}]\n`);
+	} catch (e) {
+		console.log("detection failed:", (e as Error).message);
+	}
+
 	let failures = 0;
 	for (let cycle = 1; cycle <= cycles; cycle++) {
 		const t0 = Date.now();
