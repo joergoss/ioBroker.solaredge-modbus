@@ -86,6 +86,12 @@ describe("buildPollPlan", () => {
 		expect(block).to.deep.equal({ start: 0xF000, length: 4, label: "powercontrol" });
 	});
 
+	it("polls the export control block only when explicitly enabled", () => {
+		expect(buildPollPlan().some(b => b.label === "exportcontrol")).to.be.false;
+		const block = buildPollPlan({ read_export_control: true }).find(b => b.label === "exportcontrol");
+		expect(block).to.deep.equal({ start: 0xF700, length: 4, label: "exportcontrol" });
+	});
+
 	it("clamps implausible values instead of producing an invalid plan", () => {
 		expect(buildPollPlan({ meter_count: 99, battery_count: 99 })).to.have.length(12);
 		expect(buildPollPlan({ meter_count: -5, battery_count: -5 })).to.have.length(4);

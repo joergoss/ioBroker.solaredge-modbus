@@ -38,6 +38,7 @@ function makeSpecEntry(spec, base, deviceLabel) {
         type: spec.type === "string" ? "string" : "number",
         readRegister: makeSpecReader(spec, base),
         value: 0,
+        states: spec.states,
     };
 }
 class SolaredgeModbusData {
@@ -76,6 +77,46 @@ class SolaredgeModel {
             role: "value",
             type: "number",
             readRegister: (tmd) => (0, common_1.extractValue)("floatsw", 2, tmd, 0xF002),
+            value: 0,
+        };
+        /**
+         * Export control block (0xF700), relevant for feed-in limitations.
+         * Verified against a real SE10K: mode 0 (disabled), limit mode 0,
+         * site_limit is the SunSpec not-implemented float there. Only polled when
+         * the instance setting read_export_control is enabled.
+         */
+        this["exportcontrol.mode"] = {
+            descr: "Export control mode",
+            unit: "",
+            role: "value",
+            type: "number",
+            readRegister: (tmd) => (0, common_1.extractValue)("uint16be", 1, tmd, 0xF700),
+            value: 0,
+            states: {
+                "0": "Disabled",
+                "1": "Direct Export Limitation",
+                "2": "Indirect Export Limitation",
+                "3": "Production Limitation",
+            },
+        };
+        this["exportcontrol.limit_mode"] = {
+            descr: "Export control limit mode",
+            unit: "",
+            role: "value",
+            type: "number",
+            readRegister: (tmd) => (0, common_1.extractValue)("uint16be", 1, tmd, 0xF701),
+            value: 0,
+            states: {
+                "0": "Total",
+                "1": "Per Phase",
+            },
+        };
+        this["exportcontrol.site_limit"] = {
+            descr: "Export control site limit",
+            unit: "W",
+            role: "value",
+            type: "number",
+            readRegister: (tmd) => (0, common_1.extractValue)("floatsw", 2, tmd, 0xF702),
             value: 0,
         };
         this["common.C_SunSpec_ID"] = {

@@ -26,7 +26,27 @@ export interface RegisterSpec {
 	scaleFactorOffset?: number;
 	/** return null for the SunSpec "not implemented" marker (battery counters) */
 	notImplementedAsNull?: boolean;
+	/** optional value to text mapping shown by ioBroker (numeric value is kept) */
+	states?: { [key: string]: string };
 }
+
+/**
+ * SolarEdge battery status, from the maintained solaredge-modbus-multi mapping.
+ * Note that 6 is "Preserve Charge" and 7 is "Idle" - older references swap or
+ * omit these. 10 is "Power Saving", which is what a real BYD system reports at
+ * night (verified against the live capture).
+ */
+export const BATTERY_STATUS_STATES: { [key: string]: string } = {
+	"0": "Off",
+	"1": "Standby",
+	"2": "Initializing",
+	"3": "Charge",
+	"4": "Discharge",
+	"5": "Fault",
+	"6": "Preserve Charge",
+	"7": "Idle",
+	"10": "Power Saving",
+};
 
 /** Meter 1/2/3 base addresses (protocol addresses, as polled). */
 export const METER_BASE_ADDRESSES = [40123, 40123 + 0xae, 40123 + 0x15c];
@@ -101,14 +121,16 @@ export const BATTERY_SPECS: RegisterSpec[] = [
 	{ name: "instantaneous_voltage", descr: "Battery 1 Instantaneous Voltage", unit: "V", type: "floatsw", len: 2, offset: 112 },
 	{ name: "instantaneous_current", descr: "Battery 1 Instantaneous Current", unit: "A", type: "floatsw", len: 2, offset: 114 },
 	{ name: "instantaneous_power", descr: "Battery 1 Instantaneous Power", unit: "W", type: "floatsw", len: 2, offset: 116 },
-	{ name: "lifetime_export_energy_counter", descr: "Battery 1 Lifetime Export Energy Counter", unit: "Wh", type: "uint64sw", len: 4, offset: 118, notImplementedAsNull: true },
-	{ name: "lifetime_import_energy_counter", descr: "Battery 1 Lifetime Import Energy Counter", unit: "Wh", type: "uint64sw", len: 4, offset: 122, notImplementedAsNull: true },
+	// Note: on BYD and LG batteries SolarEdge does not provide reliable lifetime
+	// counters at all (see issue #10). Decoding is correct, the source is not.
+	{ name: "lifetime_export_energy_counter", descr: "Battery 1 Lifetime Export Energy Counter (unreliable on BYD/LG, see README)", unit: "Wh", type: "uint64sw", len: 4, offset: 118, notImplementedAsNull: true },
+	{ name: "lifetime_import_energy_counter", descr: "Battery 1 Lifetime Import Energy Counter (unreliable on BYD/LG, see README)", unit: "Wh", type: "uint64sw", len: 4, offset: 122, notImplementedAsNull: true },
 	{ name: "max_energy", descr: "Battery 1 Max Energy", unit: "Wh", type: "floatsw", len: 2, offset: 126 },
 	{ name: "available_energy", descr: "Battery 1 Available Energy", unit: "Wh", type: "floatsw", len: 2, offset: 128 },
 	{ name: "SOH", descr: "Battery 1 State of Health (SOH)", unit: "", type: "floatsw", len: 2, offset: 130 },
 	{ name: "SOE", descr: "Battery 1 State of Energy (SOE)", unit: "", type: "floatsw", len: 2, offset: 132 },
 	// Verified against a real capture: raw registers [0x000A, 0x0000] are status
 	// 10, not 655360 - the battery block needs word swap here too (issue #4).
-	{ name: "status", descr: "Battery 1 Status", unit: "", type: "uint32sw", len: 2, offset: 134 },
+	{ name: "status", descr: "Battery 1 Status", unit: "", type: "uint32sw", len: 2, offset: 134, states: BATTERY_STATUS_STATES },
 	{ name: "status_internal", descr: "Battery 1 Status Internal", unit: "", type: "uint32sw", len: 2, offset: 136 },
 ];

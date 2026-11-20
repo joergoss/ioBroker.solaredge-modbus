@@ -27,6 +27,8 @@ export interface PollPlanOptions {
 	 * not implement the block cannot break the whole poll cycle.
 	 */
 	read_power_control?: boolean;
+	/** Also poll the export control block at 0xF700 (feed-in limitation). */
+	read_export_control?: boolean;
 	/**
 	 * Explicit 1 based slot lists from auto detection. When set they take
 	 * precedence over meter_count/battery_count. Slots may be sparse (a system
@@ -62,6 +64,9 @@ export function buildPollPlan(options: PollPlanOptions = {}): PollBlock[] {
 
 	if (options.read_power_control === true) {
 		blocks.push({ start: 0xF000, length: 4, label: "powercontrol" });
+	}
+	if (options.read_export_control === true) {
+		blocks.push({ start: 0xF700, length: 4, label: "exportcontrol" });
 	}
 
 	for (const slot of batterySlots) {

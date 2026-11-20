@@ -32,6 +32,7 @@ class SolaredgeModbus extends utils.Adapter {
 	private infoConnectionState: boolean | undefined
 	/** Result of the optional startup auto detection (issue: device detection). */
 	private detectedDevices?: DetectedDevices
+	private redetectInterval?: NodeJS.Timeout
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -57,9 +58,8 @@ class SolaredgeModbus extends utils.Adapter {
 		// through the native defaults.
 		if (this.config.auto_detect_devices === true && !validateConnectionConfig(this.config)) {
 			try {
-				this.detectedDevices = await this.solaredge.detectDevices(this.config)
-				this.solaredge.detectedDevices = this.detectedDevices
-				this.log.info(`auto detection: meters [${this.detectedDevices.meters.join(",")}], batteries [${this.detectedDevices.batteries.join(",")}]`)
+				await this.runAutoDetection()
+				this.startRedetection()
 			} catch (e) {
 				this.log.warn(`auto detection failed, falling back to configured meter_count/battery_count: ${formatError(e)}`)
 			}
@@ -84,6 +84,10 @@ class SolaredgeModbus extends utils.Adapter {
 			if (this.watchDogInterval) {
 				clearInterval(this.watchDogInterval)
 				this.watchDogInterval = undefined
+			}
+			if (this.redetectInterval) {
+				clearInterval(this.redetectInterval)
+				this.redetectInterval = undefined
 			}
 			// Wake the main loop up instead of letting it sleep into the next
 			// adapter incarnation - that caused "DB closed" errors after restarts.
@@ -208,6 +212,44 @@ class SolaredgeModbus extends utils.Adapter {
 		this.configProblem = problem
 		this.log.error(`invalid adapter configuration: ${problem}. Please check the instance settings - no connection attempt is made.`)
 		void this.setInfoConnectionState(false)
+	}
+
+	/** Runs auto detection and creates objects for newly appeared devices. */
+	private async runAutoDetection(): Promise<void> {
+		if (!this.solaredge) {
+			return
+		}
+		const detected = await this.solaredge.detectDevices(this.config)
+		this.solaredge.detectedDevices = detected
+		const changed = JSON.stringify(detected) !== JSON.stringify(this.detectedDevices)
+		this.detectedDevices = detected
+		this.log.info(`auto detection: meters [${detected.meters.join(",")}], batteries [${detected.batteries.join(",")}]`)
+		if (changed) {
+			// initObjects only adds/extends, never deletes - a device that was
+			// unplugged keeps its old states instead of losing its history
+			await this.initObjects()
+		}
+	}
+
+	/**
+	 * Re-detects wiring changes periodically, like other SolarEdge integrations
+	 * do. Only active when auto detection is enabled; 0 disables the timer.
+	 */
+	private startRedetection(): void {
+		const minutes = this.config.redetect_interval_minutes ?? 15
+		if (minutes <= 0) {
+			return
+		}
+		this.redetectInterval = setInterval(async () => {
+			if (!this.mainLoopRunning) {
+				return
+			}
+			try {
+				await this.runAutoDetection()
+			} catch (e) {
+				this.log.warn(`periodic re-detection failed: ${formatError(e)}`)
+			}
+		}, minutes * 60000)
 	}
 
 	private async startWatchDog(): Promise<void> {

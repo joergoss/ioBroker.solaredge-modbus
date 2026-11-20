@@ -42,6 +42,9 @@ iobroker url https://github.com/joergoss/ioBroker.solaredge-modbus
 | `connection_timeout` | 5000 | Connection/socket timeout in ms |
 | `max_register_block_size` | 0 | 0 = default requests. Set e.g. 40 to split long reads into smaller chunks. **Caution:** at least one tested firmware stops answering when the battery block is split - use only together with `log_raw_registers` for diagnosis |
 | `read_power_control` | off | Additionally reads the power control block 0xF000 (`rrcr_state`, `active_power_limit`, `cosphi`). Leave off if your firmware does not implement it |
+| `read_export_control` | off | Additionally reads the export control block 0xF700 (`mode`, `limit_mode`, `site_limit`) for feed-in limitations |
+| `auto_detect_devices` | on for new instances | Detects which meters and batteries really exist from their identification blocks. Off = use `meter_count`/`battery_count`. **Note:** the js-controller merges new native defaults into existing instances on adapter updates, so updating enables this unless you switch it off |
+| `redetect_interval_minutes` | 15 | Re-runs auto detection periodically to pick up wiring changes. 0 disables; only used when `auto_detect_devices` is on |
 | `log_raw_registers` | off | Log every polled block as raw hex values - only for collecting bug report data |
 
 ### Provided states
@@ -52,13 +55,16 @@ iobroker url https://github.com/joergoss/ioBroker.solaredge-modbus
 - `battery.*` - battery 1 (historical, unnumbered ids), `battery.2.*` - battery 2
 - `control.*` - SolarEdge storage control, writable states are applied on the next poll cycle
 - `powercontrol.*` - optional power control block (RRCR state, active power limit, cos phi), enable with `read_power_control`
+- `exportcontrol.*` - optional export/feed-in limitation block, enable with `read_export_control`
 - `info.connection` - true while the inverter answers
 
 ### Troubleshooting
 
 **Frequent errors at night or when the inverter changes state:** the inverter simply stops answering Modbus requests while it sleeps. The adapter retries with an increasing delay (up to 60 s) and only logs the first failure plus every 30th one, instead of flooding the log.
 
-**Implausible battery energy counters:** fixed in the current development version - the battery block needs reversed word order, which the lifetime counters previously did not use.
+**Battery energy counters on BYD and LG batteries:** the decoding is correct, but SolarEdge does not provide reliable lifetime counters for these batteries (documented behaviour, see issue #10). The values may be small, reset unexpectedly or be absent. For energy accounting, prefer integrating `battery.instantaneous_power` yourself or use the meter energy counters instead.
+
+**Battery status values:** `battery.status` is numeric and comes with a text mapping (0 Off, 1 Standby, 2 Initializing, 3 Charge, 4 Discharge, 5 Fault, 6 Preserve Charge, 7 Idle, 10 Power Saving). Scripts can keep comparing numbers.
 
 **To report a decoding problem:** enable `log_raw_registers` for a short time and attach the log lines (`raw registers …`) to your GitHub issue. They contain the exact bytes received, which makes a register-by-register comparison possible without access to your inverter.
 

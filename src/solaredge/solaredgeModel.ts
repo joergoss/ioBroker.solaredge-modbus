@@ -39,6 +39,7 @@ function makeSpecEntry(spec: RegisterSpec, base: number, deviceLabel?: string): 
 		type: spec.type === "string" ? "string" : "number",
 		readRegister: makeSpecReader(spec, base),
 		value: 0,
+		states: spec.states,
 	};
 }
 
@@ -115,6 +116,49 @@ export class SolaredgeModel {
 		role:  "value",
 		type: "number",
 		readRegister:  (tmd: Buffer) =>  extractValue("floatsw", 2, tmd, 0xF002) as number,
+		value: 0,
+	};
+
+	/**
+	 * Export control block (0xF700), relevant for feed-in limitations.
+	 * Verified against a real SE10K: mode 0 (disabled), limit mode 0,
+	 * site_limit is the SunSpec not-implemented float there. Only polled when
+	 * the instance setting read_export_control is enabled.
+	 */
+	"exportcontrol.mode":    SolaredgeDataEntry = {
+		descr: "Export control mode",
+		unit:  "",
+		role:  "value",
+		type: "number",
+		readRegister:  (tmd: Buffer) =>  extractValue("uint16be", 1, tmd, 0xF700) as number,
+		value: 0,
+		states: {
+			"0": "Disabled",
+			"1": "Direct Export Limitation",
+			"2": "Indirect Export Limitation",
+			"3": "Production Limitation",
+		},
+	};
+
+	"exportcontrol.limit_mode":    SolaredgeDataEntry = {
+		descr: "Export control limit mode",
+		unit:  "",
+		role:  "value",
+		type: "number",
+		readRegister:  (tmd: Buffer) =>  extractValue("uint16be", 1, tmd, 0xF701) as number,
+		value: 0,
+		states: {
+			"0": "Total",
+			"1": "Per Phase",
+		},
+	};
+
+	"exportcontrol.site_limit":    SolaredgeDataEntry = {
+		descr: "Export control site limit",
+		unit:  "W",
+		role:  "value",
+		type: "number",
+		readRegister:  (tmd: Buffer) =>  extractValue("floatsw", 2, tmd, 0xF702) as number,
 		value: 0,
 	};
 

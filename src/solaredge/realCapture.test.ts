@@ -12,6 +12,8 @@ import { SolaredgeModel } from "./solaredgeModel";
 import { bufferFromCapture } from "./decodeCapture";
 import capture from "./realBatteryCapture.json";
 import powerCapture from "./realPowerControlCapture.json";
+import exportCapture from "./realExportControlCapture.json";
+import { SUNSPEC_NOT_IMPLEMENTED_FLOAT32 } from "./common";
 
 describe("real battery capture (SE10K + BYD LVS 16.0)", () => {
 	const buf = bufferFromCapture(capture as { blocks: Record<string, { start: number; hex: string }> });
@@ -69,5 +71,39 @@ describe("real power control capture (0xF000)", () => {
 	it("decodes cosphi as 1.0 with word swap", () => {
 		// raw [0x0000, 0x3F80]: plain floatbe would be a tiny denormal number
 		expect(model["powercontrol.cosphi"].readRegister!(buf)).to.equal(1);
+	});
+});
+
+describe("battery status text mapping (issue #11)", () => {
+	const model = new SolaredgeModel();
+
+	it("maps the measured night status 10 to Power Saving", () => {
+		// the real BYD system reports 10 at night; older reference lists do not
+		// even contain this value, and swap 6/7
+		expect(model["battery.status"].states?.["10"]).to.equal("Power Saving");
+		expect(model["battery.status"].states?.["6"]).to.equal("Preserve Charge");
+		expect(model["battery.status"].states?.["7"]).to.equal("Idle");
+	});
+
+	it("keeps the numeric value for existing scripts", () => {
+		const buf = bufferFromCapture(capture as { blocks: Record<string, { start: number; hex: string }> });
+		expect(model["battery.status"].readRegister!(buf)).to.equal(10);
+	});
+});
+
+describe("real export control capture (0xF700)", () => {
+	const buf = bufferFromCapture(exportCapture as { blocks: Record<string, { start: number; hex: string }> });
+	const model = new SolaredgeModel();
+
+	it("reads a disabled export control with its text mapping", () => {
+		expect(model["exportcontrol.mode"].readRegister!(buf)).to.equal(0);
+		expect(model["exportcontrol.mode"].states?.["0"]).to.equal("Disabled");
+		expect(model["exportcontrol.limit_mode"].readRegister!(buf)).to.equal(0);
+	});
+
+	it("decodes the unimplemented site limit as the SunSpec marker float", () => {
+		// raw ff ff ff 7f with word swap -> 0xFF7FFFFF = -FLT_MAX, which
+		// updateSolaredgeData turns into null instead of a measurement
+		expect(model["exportcontrol.site_limit"].readRegister!(buf)).to.equal(SUNSPEC_NOT_IMPLEMENTED_FLOAT32);
 	});
 });

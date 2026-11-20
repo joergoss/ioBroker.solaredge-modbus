@@ -15,7 +15,9 @@ declare global {
 			battery_count: number
 			max_register_block_size: number
 			read_power_control: boolean
+			read_export_control: boolean
 			auto_detect_devices: boolean
+			redetect_interval_minutes: number
 		}
 	}
 }

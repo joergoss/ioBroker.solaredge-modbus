@@ -105,6 +105,10 @@
 
 		<div class="row">
 			<div class="col s3 input-field">
+				<input type="number" class="value" id="redetect_interval_minutes" min="0" max="1440" />
+				<label for="redetect_interval_minutes" class="translate">redetect_interval_minutes</label>
+			</div>
+			<div class="col s3 input-field">
 				<input type="number" class="value" id="meter_count" min="1" max="3" />
 				<label for="meter_count" class="translate">meter_count</label>
 			</div>
@@ -148,6 +152,19 @@
 				</label>
 				<p class="translate" style="font-size: 0.9em; opacity: 0.7; margin-top: 0;">
 					Additionally reads rrcr_state, active_power_limit and cosphi.
+					Leave off if your firmware does not implement this block.
+				</p>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col s12">
+				<label>
+					<input type="checkbox" class="value" id="read_export_control" />
+					<span class="translate">read export control block (0xF700)</span>
+				</label>
+				<p class="translate" style="font-size: 0.9em; opacity: 0.7; margin-top: 0;">
+					Additionally reads export control mode, limit mode and site limit (feed-in limitation).
 					Leave off if your firmware does not implement this block.
 				</p>
 			</div>

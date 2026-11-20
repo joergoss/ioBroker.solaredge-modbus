@@ -1,0 +1,11 @@
+{
+ "description": "Real read-only capture of the SolarEdge export control block (0xF700) from an SE10K. mode 0 (disabled), limit_mode 0, site_limit is the SunSpec not-implemented float (-FLT_MAX after word swap). No serial numbers in this block.",
+ "captured": "2026-11-20T23:20:40.977Z",
+ "blocks": {
+  "exportcontrol": {
+   "start": 63232,
+   "length": 8,
+   "hex": "00000000ffffff7f0004000100000000"
+  }
+ }
+}

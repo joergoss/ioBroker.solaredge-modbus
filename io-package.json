@@ -287,7 +287,9 @@
         "battery_count": 1,
         "max_register_block_size": 0,
         "read_power_control": false,
-        "auto_detect_devices": true
+        "read_export_control": false,
+        "auto_detect_devices": true,
+        "redetect_interval_minutes": 15
     },
     "objects": [],
     "instanceObjects": []
