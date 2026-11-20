@@ -20,7 +20,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SolaredgeTCPModbus = void 0;
+exports.SolaredgeTCPModbus = exports.RequestTimeoutError = void 0;
 const net = __importStar(require("net"));
 const solaredgeModel_1 = require("./solaredgeModel");
 const connectionPolicy_1 = require("./connectionPolicy");
@@ -28,6 +28,14 @@ const pollPlan_1 = require("./pollPlan");
 /* eslint-disable @typescript-eslint/no-var-requires */
 // create a tcp modbus client (jsmodbus ships no type definitions)
 const modbus = require("jsmodbus");
+/** A single modbus request did not answer within the configured timeout. */
+class RequestTimeoutError extends Error {
+    constructor(block, timeoutMs) {
+        super(`modbus request timeout after ${timeoutMs} ms in block ${block}`);
+        this.name = "RequestTimeoutError";
+    }
+}
+exports.RequestTimeoutError = RequestTimeoutError;
 class SolaredgeTCPModbus {
     constructor(log) {
         this.bufferSize = 0xFFFF;
@@ -63,56 +71,56 @@ class SolaredgeTCPModbus {
     async readAndWrite(adapterConfig) {
         const config = (0, connectionPolicy_1.withConnectionDefaults)(adapterConfig);
         this.logRawRegisters = adapterConfig.log_raw_registers === true;
-        await this.connect(config, async (client) => {
-            while (this.sendHoldingRegisterQueue.length > 0) {
-                const item = this.sendHoldingRegisterQueue.pop();
-                this.log.debug("request writeSingleRegister " + JSON.stringify(item));
-                const response = await client.writeMultipleRegisters(item === null || item === void 0 ? void 0 : item.register, item === null || item === void 0 ? void 0 : item.value);
-                this.log.debug("response writeSingleRegister " + JSON.stringify(response));
-                await this.sleep(config.com_wait_pause);
+        const client = await this.ensureConnected(config);
+        while (this.sendHoldingRegisterQueue.length > 0) {
+            const item = this.sendHoldingRegisterQueue.pop();
+            this.log.debug("request writeMultipleRegisters " + JSON.stringify(item));
+            const response = await this.withTimeout(client.writeMultipleRegisters(item === null || item === void 0 ? void 0 : item.register, item === null || item === void 0 ? void 0 : item.value), "write", config.connection_timeout);
+            this.log.debug("response writeMultipleRegisters " + JSON.stringify(response));
+            await this.sleep(config.com_wait_pause);
+        }
+        for (const block of (0, pollPlan_1.buildPollPlan)(adapterConfig)) {
+            try {
+                await this.readHoldingRegisterBlock(client, block, config.connection_timeout);
             }
-            // Which devices are polled, and how large each request may be, is
-            // defined by the poll plan (meter_count / battery_count /
-            // max_register_block_size).
-            for (const block of (0, pollPlan_1.buildPollPlan)(adapterConfig)) {
-                await this.readHoldingRegisterBlock(client, block.start, block.length, block.label);
-                await this.sleep(config.com_wait_pause);
+            catch (e) {
+                // A timeout or a broken connection invalidates the whole session:
+                // drop it so the next cycle reconnects, and let mainLoop apply
+                // its throttled logging and backoff.
+                if (e instanceof RequestTimeoutError) {
+                    this.close();
+                    throw e;
+                }
+                // jsmodbus failures for a single block (e.g. a modbus exception
+                // for an area this firmware does not implement) must not abort
+                // the remaining blocks of the cycle.
+                this.log.warn(`skipping block ${block.label}: ${e instanceof Error ? e.message : JSON.stringify(e)}`);
+                continue;
             }
-            await this.updateSolaredgeData(this.buf);
-        });
+            await this.sleep(config.com_wait_pause);
+        }
+        await this.updateSolaredgeData(this.buf);
     }
     debugBuffer() {
         this.log.debug("SolaredgeHoldingRegister debugBuffer " + JSON.stringify(this.buf));
     }
-    async readHoldingRegisterBlock(client, start, length, label = "") {
-        const block = await client.readHoldingRegisters(start, length);
-        const b = Buffer.from(block.response._body._valuesAsBuffer);
-        b.copy(this.buf, start * 2);
-        if (this.logRawRegisters) {
-            // One copyable line per block: register range plus the exact bytes as
-            // they arrived. Users can paste this into a bug report (issues #4/#5).
-            this.log.info(`raw registers ${label} 0x${start.toString(16)}..0x${(start + length - 1).toString(16)} (${length} registers): ${b.toString("hex")}`);
-        }
-    }
     /**
-     * Closes an open connection. Safe to call repeatedly and from onUnload.
-     * Previously sockets were left half open on errors and timeouts, which
-     * accumulated over the poll cycles (issue #2).
+     * Returns the existing client or opens a new connection. The socket is
+     * reused until it breaks or the adapter shuts down.
      */
-    close() {
-        if (this.socket) {
-            this.socket.removeAllListeners();
-            this.socket.destroy();
-            this.socket = undefined;
+    async ensureConnected(config) {
+        if (this.client && this.socket && !this.socket.destroyed) {
+            return this.client;
         }
+        await this.openConnection(config);
+        return this.client;
     }
-    async connect(config, callback) {
+    openConnection(config) {
         return new Promise((resolve, reject) => {
-            // A socket can report "error", "timeout" and "close" for the same
-            // failure. Settle the promise exactly once and always clean up.
-            let settled = false;
             const netSocket = new net.Socket();
             this.socket = netSocket;
+            this.client = new modbus.client.TCP(netSocket, config.unitId);
+            let settled = false;
             let timeoutRef = undefined;
             const clearConnectionTimeout = () => {
                 const timer = timeoutRef;
@@ -132,48 +140,89 @@ class SolaredgeTCPModbus {
             timeoutRef = setTimeout(() => {
                 fail(new Error(`Connection timeout after ${config.connection_timeout} ms (${config.hostname}:${config.port})`));
             }, config.connection_timeout);
-            try {
-                // create a modbus client
-                const client = new modbus.client.TCP(netSocket, config.unitId);
-                netSocket.on("connect", async () => {
-                    try {
-                        this.lastConnectedTimestamp = Date.now();
-                        clearConnectionTimeout();
-                        await callback(client);
-                        if (settled)
-                            return;
-                        settled = true;
-                        clearConnectionTimeout();
-                        this.close();
-                        resolve(this.SolaredgeData);
-                    }
-                    catch (Exception) {
-                        fail(Exception);
-                    }
-                });
-                netSocket.on("timeout", () => {
-                    fail(new Error(`Socket timeout after ${config.connection_timeout} ms (${config.hostname}:${config.port})`));
-                });
-                netSocket.on("error", (err) => {
+            // If the peer drops the session later on, just forget the client.
+            // The next poll cycle will reconnect; no unhandled rejection here.
+            netSocket.on("error", (err) => {
+                this.log.debug(`socket error: ${err.message}`);
+                if (!settled) {
                     fail(err);
-                });
-                netSocket.on("close", () => {
-                    // Also fires when the inverter drops the connection mid cycle.
-                    // Ignored once the promise is already settled.
-                    fail(new Error("Connection closed before the poll cycle finished"));
-                });
-                // "timeout" is not a connect() option: set it on the socket so
-                // inactivity raises the "timeout" event handled above.
-                netSocket.setTimeout(config.connection_timeout);
-                netSocket.connect({
-                    "host": config.hostname,
-                    "port": config.port,
-                });
-            }
-            catch (Exception) {
-                fail(Exception);
-            }
+                }
+                else {
+                    this.close();
+                }
+            });
+            netSocket.on("close", () => {
+                if (this.socket === netSocket) {
+                    this.socket = undefined;
+                    this.client = undefined;
+                }
+            });
+            netSocket.on("timeout", () => {
+                this.log.debug("socket idle timeout, closing connection");
+                this.close();
+            });
+            netSocket.on("connect", () => {
+                if (settled)
+                    return;
+                settled = true;
+                clearConnectionTimeout();
+                this.lastConnectedTimestamp = Date.now();
+                this.log.debug(`connected to ${config.hostname}:${config.port} (unit ${config.unitId})`);
+                resolve();
+            });
+            // No socket idle timeout here on purpose: it would close the
+            // persistent session between two poll cycles. The connect timer and
+            // the per-request timeout in withTimeout() cover both hang cases.
+            netSocket.connect({
+                "host": config.hostname,
+                "port": config.port,
+            });
         });
+    }
+    /** Bounds a single modbus request; an unanswered request hangs otherwise. */
+    async withTimeout(request, label, timeoutMs) {
+        let timer = undefined;
+        try {
+            return await Promise.race([
+                request,
+                new Promise((_resolve, reject) => {
+                    timer = setTimeout(() => reject(new RequestTimeoutError(label, timeoutMs)), timeoutMs);
+                }),
+            ]);
+        }
+        finally {
+            if (timer !== undefined)
+                clearTimeout(timer);
+        }
+    }
+    async readHoldingRegisterBlock(client, block, timeoutMs) {
+        const response = await this.withTimeout(client.readHoldingRegisters(block.start, block.length), block.label, timeoutMs);
+        const b = Buffer.from(response.response._body._valuesAsBuffer);
+        b.copy(this.buf, block.start * 2);
+        // proof of life for the watchdog, on every successful block
+        this.lastConnectedTimestamp = Date.now();
+        if (this.logRawRegisters) {
+            // One copyable line per block: register range plus the exact bytes as
+            // they arrived. Users can paste this into a bug report (issues #4/#5).
+            this.log.info(`raw registers ${block.label} 0x${block.start.toString(16)}..0x${(block.start + block.length - 1).toString(16)} (${block.length} registers): ${b.toString("hex")}`);
+        }
+    }
+    /**
+     * Closes the connection and forgets the client. Safe to call repeatedly.
+     * The next poll cycle transparently opens a fresh connection.
+     */
+    close() {
+        const socket = this.socket;
+        this.socket = undefined;
+        this.client = undefined;
+        if (socket) {
+            socket.removeAllListeners();
+            socket.destroy();
+        }
+    }
+    /** Test/inspection helper: whether a persistent session is currently held. */
+    isConnected() {
+        return !!(this.socket && !this.socket.destroyed && this.client);
     }
 }
 exports.SolaredgeTCPModbus = SolaredgeTCPModbus;
