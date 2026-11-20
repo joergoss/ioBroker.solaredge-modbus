@@ -1,9 +1,22 @@
 "use strict";
 /* eslint-disable */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.writeValue = exports.extractValue = exports.extractBigUint64Sw = exports.NOT_IMPLEMENTED_UINT64 = void 0;
+exports.writeValue = exports.extractValue = exports.extractBigUint64Sw = exports.isUnavailableNumber = exports.SUNSPEC_NOT_IMPLEMENTED_FLOAT32 = exports.NOT_IMPLEMENTED_UINT64 = void 0;
 /** SunSpec/SolarEdge marker for a value the device does not provide. */
 exports.NOT_IMPLEMENTED_UINT64 = BigInt("0xFFFFFFFFFFFFFFFF");
+/**
+ * SunSpec marks unimplemented float32 values as 0xFF7FFFFF, which is -FLT_MAX,
+ * not NaN. Seen on a real system for the rated energy of an empty battery slot.
+ */
+exports.SUNSPEC_NOT_IMPLEMENTED_FLOAT32 = -3.4028234663852886e+38;
+/**
+ * True for values that must not be written to ioBroker as measurements:
+ * Infinity/NaN (e.g. from a huge scale factor) and the SunSpec marker.
+ */
+function isUnavailableNumber(value) {
+    return !Number.isFinite(value) || value === exports.SUNSPEC_NOT_IMPLEMENTED_FLOAT32;
+}
+exports.isUnavailableNumber = isUnavailableNumber;
 /**
  * Reads a 64 bit unsigned integer with reversed *register* order.
  *

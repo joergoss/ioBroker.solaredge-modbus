@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.splitIdFromAdapter = exports.byteString = exports.ledState = exports.charge_states = exports.resolveAlarmBitfield = exports.alarmTextArray = exports.resolveFaultsBitfield = exports.to32bitNumber = exports.round = exports.signedToInteger = void 0;
+exports.splitIdFromAdapter = exports.roleForUnit = exports.byteString = exports.ledState = exports.charge_states = exports.resolveAlarmBitfield = exports.alarmTextArray = exports.resolveFaultsBitfield = exports.to32bitNumber = exports.round = exports.signedToInteger = void 0;
 // helper function to convert signed value to integer
 function signedToInteger(value) {
     if ((value & 0x8000) > 0) {
@@ -126,6 +126,22 @@ function byteString(n) {
     return ("000000000" + n.toString(2)).substr(-8);
 }
 exports.byteString = byteString;
+/**
+ * Maps a unit to a meaningful ioBroker role, so power/energy values show up
+ * correctly in dashboards and device managers instead of plain "state".
+ */
+function roleForUnit(unit) {
+    switch (unit) {
+        case "W": return "value.power";
+        case "Wh": return "value.energy";
+        case "V": return "value.voltage";
+        case "A": return "value.current";
+        case "°C": return "value.temperature";
+        case "Hz": return "value.frequency";
+        default: return "value";
+    }
+}
+exports.roleForUnit = roleForUnit;
 function splitIdFromAdapter(str) {
     const delimiter = ".";
     const start = 2;

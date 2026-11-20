@@ -127,6 +127,22 @@ export function byteString(n:number): string {
 	return ("000000000" + n.toString(2)).substr(-8)
 }
 
+/**
+ * Maps a unit to a meaningful ioBroker role, so power/energy values show up
+ * correctly in dashboards and device managers instead of plain "state".
+ */
+export function roleForUnit(unit: string): string {
+	switch (unit) {
+		case "W": return "value.power";
+		case "Wh": return "value.energy";
+		case "V": return "value.voltage";
+		case "A": return "value.current";
+		case "°C": return "value.temperature";
+		case "Hz": return "value.frequency";
+		default: return "value";
+	}
+}
+
 export function splitIdFromAdapter(str: string): string  {
 	const delimiter = "."
 	const start = 2

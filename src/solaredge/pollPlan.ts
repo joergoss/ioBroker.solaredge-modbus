@@ -27,6 +27,13 @@ export interface PollPlanOptions {
 	 * not implement the block cannot break the whole poll cycle.
 	 */
 	read_power_control?: boolean;
+	/**
+	 * Explicit 1 based slot lists from auto detection. When set they take
+	 * precedence over meter_count/battery_count. Slots may be sparse (a system
+	 * could have only battery 2), which counts alone cannot express.
+	 */
+	meter_slots?: number[];
+	battery_slots?: number[];
 }
 
 function clampInt(value: number | undefined, fallback: number, min: number, max: number): number {
@@ -45,6 +52,8 @@ function clampInt(value: number | undefined, fallback: number, min: number, max:
 export function buildPollPlan(options: PollPlanOptions = {}): PollBlock[] {
 	const meterCount = clampInt(options.meter_count, 1, 1, METER_BASE_ADDRESSES.length);
 	const batteryCount = clampInt(options.battery_count, 1, 0, BATTERY_BASE_ADDRESSES.length);
+	const meterSlots = options.meter_slots ?? Array.from({ length: meterCount }, (_v, i) => i + 1);
+	const batterySlots = options.battery_slots ?? Array.from({ length: batteryCount }, (_v, i) => i + 1);
 
 	const blocks: PollBlock[] = [
 		{ start: 0, length: 111, label: "inverter" },
@@ -55,19 +64,21 @@ export function buildPollPlan(options: PollPlanOptions = {}): PollBlock[] {
 		blocks.push({ start: 0xF000, length: 4, label: "powercontrol" });
 	}
 
-	for (let battery = 0; battery < batteryCount; battery++) {
-		const base = BATTERY_BASE_ADDRESSES[battery];
+	for (const slot of batterySlots) {
+		const base = BATTERY_BASE_ADDRESSES[slot - 1];
+		if (base === undefined) continue;
 		blocks.push(
-			{ start: base, length: 0xE16C - 0xE100, label: `battery${battery + 1}.block1` },
-			{ start: base + (0xE16C - 0xE100), length: 0xE19A - 0xE16C, label: `battery${battery + 1}.block2` },
+			{ start: base, length: 0xE16C - 0xE100, label: `battery${slot}.block1` },
+			{ start: base + (0xE16C - 0xE100), length: 0xE19A - 0xE16C, label: `battery${slot}.block2` },
 		);
 	}
 
-	for (let meter = 0; meter < meterCount; meter++) {
-		const base = METER_BASE_ADDRESSES[meter];
+	for (const slot of meterSlots) {
+		const base = METER_BASE_ADDRESSES[slot - 1];
+		if (base === undefined) continue;
 		blocks.push(
-			{ start: base, length: 40226 - 40123, label: `meter${meter + 1}.block1` },
-			{ start: base + (40227 - 40123), length: 40294 - 40227, label: `meter${meter + 1}.block2` },
+			{ start: base, length: 40226 - 40123, label: `meter${slot}.block1` },
+			{ start: base + (40227 - 40123), length: 40294 - 40227, label: `meter${slot}.block2` },
 		);
 	}
 

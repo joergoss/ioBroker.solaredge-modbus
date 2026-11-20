@@ -6,8 +6,8 @@
 // you need to create an adapter
 import * as utils from "@iobroker/adapter-core";
 import { SolaredgeDataEntry } from "./solaredge/solaredgeModel";
-import { SolaredgeTCPModbus } from "./solaredge/solaredgeTCPModbus";
-import { splitIdFromAdapter } from "./solaredge/solaredgeUtil";
+import { SolaredgeTCPModbus, DetectedDevices } from "./solaredge/solaredgeTCPModbus";
+import { splitIdFromAdapter, roleForUnit } from "./solaredge/solaredgeUtil";
 import {
 	INVALID_CONFIG_RETRY_MS,
 	backoffDelayMs,
@@ -30,6 +30,8 @@ class SolaredgeModbus extends utils.Adapter {
 	private consecutiveErrors = 0
 	private configProblem: string | null = null
 	private infoConnectionState: boolean | undefined
+	/** Result of the optional startup auto detection (issue: device detection). */
+	private detectedDevices?: DetectedDevices
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -49,10 +51,22 @@ class SolaredgeModbus extends utils.Adapter {
 
 		this.solaredge = new SolaredgeTCPModbus(this.log)
 
-		this.initObjects();
+		// Auto detection is deliberately opt-in for existing instances: the
+		// setting did not exist before, so an absent value keeps the previous
+		// behaviour (meter_count / battery_count). New instances get it enabled
+		// through the native defaults.
+		if (this.config.auto_detect_devices === true && !validateConnectionConfig(this.config)) {
+			try {
+				this.detectedDevices = await this.solaredge.detectDevices(this.config)
+				this.solaredge.detectedDevices = this.detectedDevices
+				this.log.info(`auto detection: meters [${this.detectedDevices.meters.join(",")}], batteries [${this.detectedDevices.batteries.join(",")}]`)
+			} catch (e) {
+				this.log.warn(`auto detection failed, falling back to configured meter_count/battery_count: ${formatError(e)}`)
+			}
+		}
 
+		await this.initObjects();
 
-		// In order to get state updates, you need to subscribe to them. The following line adds a subscription for our variable we have created above.
 		this.subscribeStates("control.*");
 
 		this.startWatchDog();
@@ -101,19 +115,26 @@ class SolaredgeModbus extends utils.Adapter {
 					continue
 				}
 				const v = value as SolaredgeDataEntry
+				const common = {
+					name: v.descr,
+					type: v.type,
+					// meaningful roles (value.power, value.energy, ...) instead of
+					// the generic "state" for every single data point
+					role: roleForUnit(v.unit),
+					read: true,
+					write: v.writeRegister ? true : false,
+					unit: v.unit,
+					states: v.states
+				}
 				await this.setObjectNotExistsAsync(key, {
 					type: "state",
-					common: {
-						name: v.descr,
-						type: v.type,
-						role: "state",
-						read: true,
-						write: v.writeRegister ? true : false,
-						unit: v.unit,
-						states: v.states
-					},
+					common,
 					native: {},
 				});
+				// setObjectNotExists alone never updates existing objects, so
+				// improved units/roles/descriptions would never reach users who
+				// already run the adapter. Values are untouched by extendObject.
+				await this.extendObjectAsync(key, { common });
 			}
 		}
 	}
@@ -126,13 +147,14 @@ class SolaredgeModbus extends utils.Adapter {
 	private isDeviceConfigured(key: string): boolean {
 		const meter = /^meter\.(\d+)\./.exec(key)
 		if (meter) {
-			return Number(meter[1]) <= (this.config.meter_count ?? 1)
+			const slot = Number(meter[1])
+			return this.detectedDevices ? this.detectedDevices.meters.includes(slot) : slot <= (this.config.meter_count ?? 1)
 		}
 		if (key.startsWith("battery.2.")) {
-			return (this.config.battery_count ?? 1) >= 2
+			return this.detectedDevices ? this.detectedDevices.batteries.includes(2) : (this.config.battery_count ?? 1) >= 2
 		}
 		if (key.startsWith("battery.")) {
-			return (this.config.battery_count ?? 1) >= 1
+			return this.detectedDevices ? this.detectedDevices.batteries.includes(1) : (this.config.battery_count ?? 1) >= 1
 		}
 		return true
 	}

@@ -25,6 +25,9 @@ const net = __importStar(require("net"));
 const solaredgeModel_1 = require("./solaredgeModel");
 const connectionPolicy_1 = require("./connectionPolicy");
 const pollPlan_1 = require("./pollPlan");
+const common_1 = require("./common");
+const deviceDetection_1 = require("./deviceDetection");
+const deviceSpecs_1 = require("./deviceSpecs");
 /* eslint-disable @typescript-eslint/no-var-requires */
 // create a tcp modbus client (jsmodbus ships no type definitions)
 const modbus = require("jsmodbus");
@@ -61,6 +64,12 @@ class SolaredgeTCPModbus {
                 v.valueOld = v.value;
                 try {
                     v.value = v.readRegister(tmd);
+                    // Never push Infinity/NaN or the SunSpec "not implemented" marker
+                    // into ioBroker as if it were a measurement. Null also avoids the
+                    // NaN !== NaN rewrite on every single cycle.
+                    if (typeof v.value === "number" && (0, common_1.isUnavailableNumber)(v.value)) {
+                        v.value = null;
+                    }
                 }
                 catch (Exception) {
                     this.log.error("updateSolaredgeData ERROR '" + name + "'" + JSON.stringify(v) + " Exception: " + JSON.stringify(Exception));
@@ -73,13 +82,21 @@ class SolaredgeTCPModbus {
         this.logRawRegisters = adapterConfig.log_raw_registers === true;
         const client = await this.ensureConnected(config);
         while (this.sendHoldingRegisterQueue.length > 0) {
-            const item = this.sendHoldingRegisterQueue.pop();
+            // FIFO, not pop(): queued control commands must keep their order,
+            // otherwise e.g. a later limit is applied before an earlier mode.
+            const item = this.sendHoldingRegisterQueue.shift();
             this.log.debug("request writeMultipleRegisters " + JSON.stringify(item));
             const response = await this.withTimeout(client.writeMultipleRegisters(item === null || item === void 0 ? void 0 : item.register, item === null || item === void 0 ? void 0 : item.value), "write", config.connection_timeout);
             this.log.debug("response writeMultipleRegisters " + JSON.stringify(response));
             await this.sleep(config.com_wait_pause);
         }
-        for (const block of (0, pollPlan_1.buildPollPlan)(adapterConfig)) {
+        const planOptions = { ...adapterConfig };
+        const detected = this.detectedDevices;
+        if (detected) {
+            planOptions.meter_slots = detected.meters;
+            planOptions.battery_slots = detected.batteries;
+        }
+        for (const block of (0, pollPlan_1.buildPollPlan)(planOptions)) {
             try {
                 await this.readHoldingRegisterBlock(client, block, config.connection_timeout);
             }
@@ -100,6 +117,65 @@ class SolaredgeTCPModbus {
             await this.sleep(config.com_wait_pause);
         }
         await this.updateSolaredgeData(this.buf);
+    }
+    /**
+     * Reads the identification block of every possible slot and decides which
+     * devices really exist. Only reads; never writes. Detection runs once at
+     * startup - after changing the wiring, restart the instance.
+     */
+    async detectDevices(adapterConfig) {
+        const config = (0, connectionPolicy_1.withConnectionDefaults)(adapterConfig);
+        const client = await this.ensureConnected(config);
+        const detected = { meters: [], batteries: [] };
+        const batterySerials = new Set();
+        for (let slot = 1; slot <= deviceSpecs_1.BATTERY_BASE_ADDRESSES.length; slot++) {
+            const base = deviceSpecs_1.BATTERY_BASE_ADDRESSES[slot - 1];
+            try {
+                await this.readHoldingRegisterBlock(client, { start: base, length: deviceDetection_1.IDENTIFICATION_BLOCK_LENGTH, label: `detect-battery${slot}` }, config.connection_timeout);
+                const identity = (0, deviceDetection_1.readBatteryIdentity)(this.buf, slot);
+                const result = (0, deviceDetection_1.evaluateBattery)(identity, batterySerials);
+                if (result.present) {
+                    detected.batteries.push(slot);
+                    batterySerials.add(identity.serialNumber.trim());
+                    this.log.info(`battery ${slot} detected: ${result.reason}`);
+                }
+                else {
+                    this.log.info(`no battery at slot ${slot}: ${result.reason}`);
+                }
+            }
+            catch (e) {
+                if (e instanceof RequestTimeoutError) {
+                    this.close();
+                    throw e;
+                }
+                this.log.info(`battery slot ${slot} not readable, treating as absent: ${e instanceof Error ? e.message : JSON.stringify(e)}`);
+            }
+            await this.sleep(config.com_wait_pause);
+        }
+        for (let slot = 1; slot <= deviceSpecs_1.METER_BASE_ADDRESSES.length; slot++) {
+            const base = deviceSpecs_1.METER_BASE_ADDRESSES[slot - 1];
+            try {
+                await this.readHoldingRegisterBlock(client, { start: base, length: deviceDetection_1.IDENTIFICATION_BLOCK_LENGTH, label: `detect-meter${slot}` }, config.connection_timeout);
+                const identity = (0, deviceDetection_1.readMeterIdentity)(this.buf, slot);
+                const result = (0, deviceDetection_1.evaluateMeter)(identity);
+                if (result.present) {
+                    detected.meters.push(slot);
+                    this.log.info(`meter ${slot} detected: ${result.reason}`);
+                }
+                else {
+                    this.log.info(`no meter at slot ${slot}: ${result.reason}`);
+                }
+            }
+            catch (e) {
+                if (e instanceof RequestTimeoutError) {
+                    this.close();
+                    throw e;
+                }
+                this.log.info(`meter slot ${slot} not readable, treating as absent: ${e instanceof Error ? e.message : JSON.stringify(e)}`);
+            }
+            await this.sleep(config.com_wait_pause);
+        }
+        return detected;
     }
     debugBuffer() {
         this.log.debug("SolaredgeHoldingRegister debugBuffer " + JSON.stringify(this.buf));

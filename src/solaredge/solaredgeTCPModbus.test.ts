@@ -6,6 +6,7 @@
 import { expect } from "chai";
 import * as net from "net";
 import { SolaredgeTCPModbus, RequestTimeoutError } from "./solaredgeTCPModbus";
+import identificationCapture from "./realDeviceIdentification.json";
 
 type ServerMode = "normal" | "silent" | "exception";
 
@@ -16,6 +17,8 @@ class TestModbusServer {
 	requests: Array<{ start: number; length: number }> = [];
 	/** behaviour per start address, everything else answers normally */
 	behaviour = new Map<number, ServerMode>();
+	/** optional real captured payload per start address (identification blocks) */
+	capture = new Map<number, Buffer>();
 	port = 0;
 
 	constructor() {
@@ -44,9 +47,16 @@ class TestModbusServer {
 						socket.write(this.frame(tid, unit, pdu));
 						continue;
 					}
+					// always answer with the requested number of registers; captured
+					// identification data is padded with zeros for longer blocks
 					const data = Buffer.alloc(count * 2);
-					for (let i = 0; i < count; i++) {
-						data.writeUInt16BE((start + i) & 0xFFFF, i * 2);
+					const captured = this.capture.get(start);
+					if (captured) {
+						captured.copy(data, 0, 0, Math.min(captured.length, data.length));
+					} else {
+						for (let i = 0; i < count; i++) {
+							data.writeUInt16BE((start + i) & 0xFFFF, i * 2);
+						}
 					}
 					socket.write(this.frame(tid, unit, Buffer.concat([Buffer.from([0x03, count * 2]), data])));
 				}
@@ -166,5 +176,28 @@ describe("SolaredgeTCPModbus persistent connection (issue #13)", () => {
 		await adapter.readAndWrite(config(server.port));
 		expect(server.connections).to.equal(2);
 		expect(adapter.isConnected()).to.be.true;
+	});
+
+	it("auto detection finds only populated slots and polls just those", async () => {
+		// the server answers with the real identification blocks captured from a
+		// system that has exactly one battery and one meter
+		for (const block of Object.values(identificationCapture.blocks)) {
+			server.capture.set(block.start, Buffer.from(block.hex, "hex"));
+		}
+
+		const detected = await adapter.detectDevices(config(server.port));
+		expect(detected.batteries, "battery 2 has not-implemented rated energy").to.deep.equal([1]);
+		expect(detected.meters, "meters 2/3 contain garbage").to.deep.equal([1]);
+
+		// the detected slots must drive the poll plan of the following cycles
+		adapter.detectedDevices = detected;
+		server.requests = [];
+		await adapter.readAndWrite(config(server.port));
+		const starts = server.requests.map(r => r.start);
+		expect(starts).to.include(0xE100);
+		expect(starts).to.include(40123);
+		expect(starts).to.not.include(0xE200);
+		expect(starts).to.not.include(40297);
+		expect(starts).to.not.include(40471);
 	});
 });

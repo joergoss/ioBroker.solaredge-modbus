@@ -1,0 +1,16 @@
+# Keeps dependencies and the CI actions current without manual chasing.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    # Development tooling only; runtime deps are reviewed deliberately.
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

@@ -47,8 +47,21 @@ class SolaredgeModbus extends utils.Adapter {
     async onReady() {
         // Initialize your adapter here
         this.solaredge = new solaredgeTCPModbus_1.SolaredgeTCPModbus(this.log);
-        this.initObjects();
-        // In order to get state updates, you need to subscribe to them. The following line adds a subscription for our variable we have created above.
+        // Auto detection is deliberately opt-in for existing instances: the
+        // setting did not exist before, so an absent value keeps the previous
+        // behaviour (meter_count / battery_count). New instances get it enabled
+        // through the native defaults.
+        if (this.config.auto_detect_devices === true && !(0, connectionPolicy_1.validateConnectionConfig)(this.config)) {
+            try {
+                this.detectedDevices = await this.solaredge.detectDevices(this.config);
+                this.solaredge.detectedDevices = this.detectedDevices;
+                this.log.info(`auto detection: meters [${this.detectedDevices.meters.join(",")}], batteries [${this.detectedDevices.batteries.join(",")}]`);
+            }
+            catch (e) {
+                this.log.warn(`auto detection failed, falling back to configured meter_count/battery_count: ${(0, connectionPolicy_1.formatError)(e)}`);
+            }
+        }
+        await this.initObjects();
         this.subscribeStates("control.*");
         this.startWatchDog();
         this.mainLoop();
@@ -89,19 +102,26 @@ class SolaredgeModbus extends utils.Adapter {
                     continue;
                 }
                 const v = value;
+                const common = {
+                    name: v.descr,
+                    type: v.type,
+                    // meaningful roles (value.power, value.energy, ...) instead of
+                    // the generic "state" for every single data point
+                    role: (0, solaredgeUtil_1.roleForUnit)(v.unit),
+                    read: true,
+                    write: v.writeRegister ? true : false,
+                    unit: v.unit,
+                    states: v.states
+                };
                 await this.setObjectNotExistsAsync(key, {
                     type: "state",
-                    common: {
-                        name: v.descr,
-                        type: v.type,
-                        role: "state",
-                        read: true,
-                        write: v.writeRegister ? true : false,
-                        unit: v.unit,
-                        states: v.states
-                    },
+                    common,
                     native: {},
                 });
+                // setObjectNotExists alone never updates existing objects, so
+                // improved units/roles/descriptions would never reach users who
+                // already run the adapter. Values are untouched by extendObject.
+                await this.extendObjectAsync(key, { common });
             }
         }
     }
@@ -114,13 +134,14 @@ class SolaredgeModbus extends utils.Adapter {
         var _a, _b, _c;
         const meter = /^meter\.(\d+)\./.exec(key);
         if (meter) {
-            return Number(meter[1]) <= ((_a = this.config.meter_count) !== null && _a !== void 0 ? _a : 1);
+            const slot = Number(meter[1]);
+            return this.detectedDevices ? this.detectedDevices.meters.includes(slot) : slot <= ((_a = this.config.meter_count) !== null && _a !== void 0 ? _a : 1);
         }
         if (key.startsWith("battery.2.")) {
-            return ((_b = this.config.battery_count) !== null && _b !== void 0 ? _b : 1) >= 2;
+            return this.detectedDevices ? this.detectedDevices.batteries.includes(2) : ((_b = this.config.battery_count) !== null && _b !== void 0 ? _b : 1) >= 2;
         }
         if (key.startsWith("battery.")) {
-            return ((_c = this.config.battery_count) !== null && _c !== void 0 ? _c : 1) >= 1;
+            return this.detectedDevices ? this.detectedDevices.batteries.includes(1) : ((_c = this.config.battery_count) !== null && _c !== void 0 ? _c : 1) >= 1;
         }
         return true;
     }

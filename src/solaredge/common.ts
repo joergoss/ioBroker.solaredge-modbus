@@ -4,6 +4,20 @@
 export const NOT_IMPLEMENTED_UINT64 = BigInt("0xFFFFFFFFFFFFFFFF");
 
 /**
+ * SunSpec marks unimplemented float32 values as 0xFF7FFFFF, which is -FLT_MAX,
+ * not NaN. Seen on a real system for the rated energy of an empty battery slot.
+ */
+export const SUNSPEC_NOT_IMPLEMENTED_FLOAT32 = -3.4028234663852886e+38;
+
+/**
+ * True for values that must not be written to ioBroker as measurements:
+ * Infinity/NaN (e.g. from a huge scale factor) and the SunSpec marker.
+ */
+export function isUnavailableNumber(value: number): boolean {
+	return !Number.isFinite(value) || value === SUNSPEC_NOT_IMPLEMENTED_FLOAT32;
+}
+
+/**
  * Reads a 64 bit unsigned integer with reversed *register* order.
  *
  * SolarEdge stores the battery block with little endian word order while the

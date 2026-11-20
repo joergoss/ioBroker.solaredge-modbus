@@ -130,6 +130,19 @@
 		<div class="row">
 			<div class="col s12">
 				<label>
+					<input type="checkbox" class="value" id="auto_detect_devices" />
+					<span class="translate">auto detect meters and batteries</span>
+				</label>
+				<p class="translate" style="font-size: 0.9em; opacity: 0.7; margin-top: 0;">
+					Reads the identification block of every slot at startup and polls only the devices that really exist
+					(ignores meter_count / battery_count when enabled). Restart the instance after changing the wiring.
+				</p>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col s12">
+				<label>
 					<input type="checkbox" class="value" id="read_power_control" />
 					<span class="translate">read power control block (0xF000)</span>
 				</label>

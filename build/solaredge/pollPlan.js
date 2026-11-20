@@ -15,8 +15,11 @@ function clampInt(value, fallback, min, max) {
  * has always read, so existing installations see no behavioural change.
  */
 function buildPollPlan(options = {}) {
+    var _a, _b;
     const meterCount = clampInt(options.meter_count, 1, 1, deviceSpecs_1.METER_BASE_ADDRESSES.length);
     const batteryCount = clampInt(options.battery_count, 1, 0, deviceSpecs_1.BATTERY_BASE_ADDRESSES.length);
+    const meterSlots = (_a = options.meter_slots) !== null && _a !== void 0 ? _a : Array.from({ length: meterCount }, (_v, i) => i + 1);
+    const batterySlots = (_b = options.battery_slots) !== null && _b !== void 0 ? _b : Array.from({ length: batteryCount }, (_v, i) => i + 1);
     const blocks = [
         { start: 0, length: 111, label: "inverter" },
         { start: 0xE004, length: 0xE012 - 0xE004, label: "control" },
@@ -24,13 +27,17 @@ function buildPollPlan(options = {}) {
     if (options.read_power_control === true) {
         blocks.push({ start: 0xF000, length: 4, label: "powercontrol" });
     }
-    for (let battery = 0; battery < batteryCount; battery++) {
-        const base = deviceSpecs_1.BATTERY_BASE_ADDRESSES[battery];
-        blocks.push({ start: base, length: 0xE16C - 0xE100, label: `battery${battery + 1}.block1` }, { start: base + (0xE16C - 0xE100), length: 0xE19A - 0xE16C, label: `battery${battery + 1}.block2` });
+    for (const slot of batterySlots) {
+        const base = deviceSpecs_1.BATTERY_BASE_ADDRESSES[slot - 1];
+        if (base === undefined)
+            continue;
+        blocks.push({ start: base, length: 0xE16C - 0xE100, label: `battery${slot}.block1` }, { start: base + (0xE16C - 0xE100), length: 0xE19A - 0xE16C, label: `battery${slot}.block2` });
     }
-    for (let meter = 0; meter < meterCount; meter++) {
-        const base = deviceSpecs_1.METER_BASE_ADDRESSES[meter];
-        blocks.push({ start: base, length: 40226 - 40123, label: `meter${meter + 1}.block1` }, { start: base + (40227 - 40123), length: 40294 - 40227, label: `meter${meter + 1}.block2` });
+    for (const slot of meterSlots) {
+        const base = deviceSpecs_1.METER_BASE_ADDRESSES[slot - 1];
+        if (base === undefined)
+            continue;
+        blocks.push({ start: base, length: 40226 - 40123, label: `meter${slot}.block1` }, { start: base + (40227 - 40123), length: 40294 - 40227, label: `meter${slot}.block2` });
     }
     const maxSize = clampInt(options.max_register_block_size, 0, 0, 125);
     if (maxSize === 0) {
