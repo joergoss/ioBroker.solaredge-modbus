@@ -5,6 +5,9 @@ name: Test and Release
 on:
   push:
     branches:
+      # The default branch of this repository is "master". The workflow used to
+      # listen on "main" only, so it never ran for a single push.
+      - "master"
       - "main"
     tags:
       # normal versions
@@ -23,7 +26,7 @@ jobs:
     steps:
       - uses: ioBroker/testing-action-check@v1
         with:
-          node-version: '14.x'
+          node-version: '20.x'
           # Uncomment the following line if your adapter cannot be installed using 'npm ci'
           # install-command: 'npm install'
           type-checking: true
@@ -36,7 +39,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 16.x]
+        # Node 12/14/16 are end of life; 20 and 22 are the supported LTS lines.
+        node-version: [20.x, 22.x]
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
