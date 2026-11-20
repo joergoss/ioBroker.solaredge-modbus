@@ -28,6 +28,7 @@ async function main() {
         battery_count: 1,
         max_register_block_size: 0,
         read_power_control: true,
+        read_export_control: true,
     };
     // run auto detection first, exactly like a freshly configured instance
     try {
@@ -58,6 +59,7 @@ async function main() {
         "battery.model", "battery.SOE", "battery.SOH", "battery.status",
         "battery.lifetime_export_energy_counter", "battery.lifetime_import_energy_counter",
         "powercontrol.rrcr_state", "powercontrol.active_power_limit", "powercontrol.cosphi",
+        "exportcontrol.mode", "exportcontrol.limit_mode", "exportcontrol.site_limit",
     ]) {
         const entry = modbus.SolaredgeData[id];
         console.log(`${id}\t${entry === null || entry === void 0 ? void 0 : entry.value}\t${(_a = entry === null || entry === void 0 ? void 0 : entry.unit) !== null && _a !== void 0 ? _a : ""}`);

@@ -153,6 +153,12 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.2.0 (2026-11-21)
+* (joergoss) battery status text mapping including 10 = Power Saving; 6/7 corrected to Preserve Charge/Idle (#11)
+* (joergoss) optional export control block 0xF700 (mode, limit_mode, site_limit) (#12)
+* (joergoss) periodic re-detection of meters and batteries via redetect_interval_minutes (default 15)
+* (joergoss) document that BYD/LG lifetime counters are unreliable at the source, in the data point descriptions too (#10)
+
 ### 0.1.1 (2026-11-21)
 * (joergoss) fix: do not write states for meters/batteries that are not configured or detected - found on the live system, which logged "no existing object" warnings for every empty slot
 

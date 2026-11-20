@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "solaredge-modbus",
-        "version": "0.1.1",
+        "version": "0.2.0",
         "news": {
+            "0.2.0": {
+                "en": "battery status text mapping incl. 10 = Power Saving (#11)\noptional export control block 0xF700 (#12)\nperiodic re-detection of meters/batteries (redetect_interval_minutes)\ndocument that BYD/LG lifetime counters are unreliable at the source (#10)",
+                "de": "Batterie-Status als Klartext, inkl. 10 = Power Saving (#11)\noptionaler Export-Control-Block 0xF700 (#12)\nperiodische Wieder-Erkennung von Metern/Batterien (redetect_interval_minutes)\nDokumentiert: BYD/LG-Lifetime-Zaehler sind an der Quelle unzuverlaessig (#10)"
+            },
             "0.1.1": {
                 "en": "fix: do not write states for meters/batteries that are not configured or detected (caused \"no existing object\" warnings)",
                 "de": "Fix: keine States fuer nicht konfigurierte oder nicht erkannte Meter/Batterien schreiben (verursachte \"no existing object\"-Warnungen)"
@@ -206,18 +210,6 @@
                 "es": "arreglar el estado de la conexión",
                 "pl": "napraw stan połączenia",
                 "zh-cn": "修复连接状态"
-            },
-            "0.0.9": {
-                "en": "connection status",
-                "de": "Verbindungsstatus",
-                "ru": "статус соединения",
-                "pt": "status da conexão",
-                "nl": "verbindingsstatus",
-                "fr": "statut de connexion",
-                "it": "stato della connessione",
-                "es": "Estado de conexión",
-                "pl": "Status połączenia",
-                "zh-cn": "连接状态"
             }
         },
         "title": "solaredge-modbus",
