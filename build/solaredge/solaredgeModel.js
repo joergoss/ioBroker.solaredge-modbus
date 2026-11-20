@@ -49,6 +49,35 @@ class SolaredgeModbusData {
 exports.SolaredgeModbusData = SolaredgeModbusData;
 class SolaredgeModel {
     constructor() {
+        /**
+         * Power control block (0xF000). Verified against a real SE10K capture:
+         * rrcr_state 0, active_power_limit 100 (%), cosphi 1.0.
+         * cosphi needs word swap even though it sits outside the battery block.
+         */
+        this["powercontrol.rrcr_state"] = {
+            descr: "RRCR state (radio ripple control receiver)",
+            unit: "",
+            role: "value",
+            type: "number",
+            readRegister: (tmd) => (0, common_1.extractValue)("uint16be", 1, tmd, 0xF000),
+            value: 0,
+        };
+        this["powercontrol.active_power_limit"] = {
+            descr: "Active power limit in percent of nominal power",
+            unit: "%",
+            role: "value",
+            type: "number",
+            readRegister: (tmd) => (0, common_1.extractValue)("uint16be", 1, tmd, 0xF001),
+            value: 0,
+        };
+        this["powercontrol.cosphi"] = {
+            descr: "Configured cos phi",
+            unit: "",
+            role: "value",
+            type: "number",
+            readRegister: (tmd) => (0, common_1.extractValue)("floatsw", 2, tmd, 0xF002),
+            value: 0,
+        };
         this["common.C_SunSpec_ID"] = {
             descr: "Value = 'SunS' (0x53756e53). Uniquely identifies this as a SunSpec MODBUS Map",
             unit: "",

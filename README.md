@@ -40,7 +40,8 @@ iobroker url https://github.com/joergoss/ioBroker.solaredge-modbus
 | `com_wait_pause` | 200 | Pause in ms between two Modbus requests |
 | `main_loop_pause` | 1000 | Pause in ms between two poll cycles |
 | `connection_timeout` | 5000 | Connection/socket timeout in ms |
-| `max_register_block_size` | 0 | 0 = default requests. Set e.g. 40 to split long reads into smaller chunks if your firmware answers long requests with wrong values |
+| `max_register_block_size` | 0 | 0 = default requests. Set e.g. 40 to split long reads into smaller chunks. **Caution:** at least one tested firmware stops answering when the battery block is split - use only together with `log_raw_registers` for diagnosis |
+| `read_power_control` | off | Additionally reads the power control block 0xF000 (`rrcr_state`, `active_power_limit`, `cosphi`). Leave off if your firmware does not implement it |
 | `log_raw_registers` | off | Log every polled block as raw hex values - only for collecting bug report data |
 
 ### Provided states
@@ -50,6 +51,7 @@ iobroker url https://github.com/joergoss/ioBroker.solaredge-modbus
 - `meter.1.*` … `meter.3.*` - per meter currents, voltages, power and energy counters
 - `battery.*` - battery 1 (historical, unnumbered ids), `battery.2.*` - battery 2
 - `control.*` - SolarEdge storage control, writable states are applied on the next poll cycle
+- `powercontrol.*` - optional power control block (RRCR state, active power limit, cos phi), enable with `read_power_control`
 - `info.connection` - true while the inverter answers
 
 ### Troubleshooting

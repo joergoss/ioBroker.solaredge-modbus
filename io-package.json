@@ -309,7 +309,8 @@
         "log_raw_registers": false,
         "meter_count": 1,
         "battery_count": 1,
-        "max_register_block_size": 0
+        "max_register_block_size": 0,
+        "read_power_control": false
     },
     "objects": [],
     "instanceObjects": []

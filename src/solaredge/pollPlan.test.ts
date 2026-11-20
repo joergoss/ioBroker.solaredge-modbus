@@ -69,6 +69,13 @@ describe("buildPollPlan", () => {
 		expect(plan.map(b => b.start)).to.deep.equal(buildPollPlan().map(b => b.start));
 	});
 
+	it("polls the power control block only when explicitly enabled", () => {
+		expect(buildPollPlan().some(b => b.label === "powercontrol")).to.be.false;
+		const plan = buildPollPlan({ read_power_control: true });
+		const block = plan.find(b => b.label === "powercontrol");
+		expect(block).to.deep.equal({ start: 0xF000, length: 4, label: "powercontrol" });
+	});
+
 	it("clamps implausible values instead of producing an invalid plan", () => {
 		expect(buildPollPlan({ meter_count: 99, battery_count: 99 })).to.have.length(12);
 		expect(buildPollPlan({ meter_count: -5, battery_count: -5 })).to.have.length(4);

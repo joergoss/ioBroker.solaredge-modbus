@@ -86,6 +86,38 @@ export class SolaredgeModbusData {
 export class SolaredgeModel {
 	[key: string]: SolaredgeDataEntry
 
+	/**
+	 * Power control block (0xF000). Verified against a real SE10K capture:
+	 * rrcr_state 0, active_power_limit 100 (%), cosphi 1.0.
+	 * cosphi needs word swap even though it sits outside the battery block.
+	 */
+	"powercontrol.rrcr_state":    SolaredgeDataEntry = {
+		descr: "RRCR state (radio ripple control receiver)",
+		unit:  "",
+		role:  "value",
+		type: "number",
+		readRegister:  (tmd: Buffer) =>  extractValue("uint16be", 1, tmd, 0xF000) as number,
+		value: 0,
+	};
+
+	"powercontrol.active_power_limit":    SolaredgeDataEntry = {
+		descr: "Active power limit in percent of nominal power",
+		unit:  "%",
+		role:  "value",
+		type: "number",
+		readRegister:  (tmd: Buffer) =>  extractValue("uint16be", 1, tmd, 0xF001) as number,
+		value: 0,
+	};
+
+	"powercontrol.cosphi":    SolaredgeDataEntry = {
+		descr: "Configured cos phi",
+		unit:  "",
+		role:  "value",
+		type: "number",
+		readRegister:  (tmd: Buffer) =>  extractValue("floatsw", 2, tmd, 0xF002) as number,
+		value: 0,
+	};
+
 	constructor() {
 		// Meters are created from one table per supported base address.
 		METER_BASE_ADDRESSES.forEach((base, index) => {

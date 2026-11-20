@@ -14,6 +14,7 @@ declare global {
 			meter_count: number
 			battery_count: number
 			max_register_block_size: number
+			read_power_control: boolean
 		}
 	}
 }

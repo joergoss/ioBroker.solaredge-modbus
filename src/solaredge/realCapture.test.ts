@@ -11,6 +11,7 @@ import { expect } from "chai";
 import { SolaredgeModel } from "./solaredgeModel";
 import { bufferFromCapture } from "./decodeCapture";
 import capture from "./realBatteryCapture.json";
+import powerCapture from "./realPowerControlCapture.json";
 
 describe("real battery capture (SE10K + BYD LVS 16.0)", () => {
 	const buf = bufferFromCapture(capture as { blocks: Record<string, { start: number; hex: string }> });
@@ -53,5 +54,20 @@ describe("real battery capture (SE10K + BYD LVS 16.0)", () => {
 		expect(value("battery.charge_continues_power")).to.equal(5000);
 		expect(value("battery.discharge_continues_power")).to.equal(5000);
 		expect(value("battery.average_temperature")).to.equal(23);
+	});
+});
+
+describe("real power control capture (0xF000)", () => {
+	const buf = bufferFromCapture(powerCapture as { blocks: Record<string, { start: number; hex: string }> });
+	const model = new SolaredgeModel();
+
+	it("reads rrcr_state and the active power limit", () => {
+		expect(model["powercontrol.rrcr_state"].readRegister!(buf)).to.equal(0);
+		expect(model["powercontrol.active_power_limit"].readRegister!(buf)).to.equal(100);
+	});
+
+	it("decodes cosphi as 1.0 with word swap", () => {
+		// raw [0x0000, 0x3F80]: plain floatbe would be a tiny denormal number
+		expect(model["powercontrol.cosphi"].readRegister!(buf)).to.equal(1);
 	});
 });

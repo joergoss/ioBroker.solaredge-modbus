@@ -21,6 +21,12 @@ export interface PollPlanOptions {
 	 * answers long requests with stale or inconsistent values (issue #5).
 	 */
 	max_register_block_size?: number;
+	/**
+	 * Also poll the power control block at 0xF000 (rrcr_state,
+	 * active_power_limit, cosphi). Off by default so older firmware that does
+	 * not implement the block cannot break the whole poll cycle.
+	 */
+	read_power_control?: boolean;
 }
 
 function clampInt(value: number | undefined, fallback: number, min: number, max: number): number {
@@ -44,6 +50,10 @@ export function buildPollPlan(options: PollPlanOptions = {}): PollBlock[] {
 		{ start: 0, length: 111, label: "inverter" },
 		{ start: 0xE004, length: 0xE012 - 0xE004, label: "control" },
 	];
+
+	if (options.read_power_control === true) {
+		blocks.push({ start: 0xF000, length: 4, label: "powercontrol" });
+	}
 
 	for (let battery = 0; battery < batteryCount; battery++) {
 		const base = BATTERY_BASE_ADDRESSES[battery];

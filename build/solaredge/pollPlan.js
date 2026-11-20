@@ -21,6 +21,9 @@ function buildPollPlan(options = {}) {
         { start: 0, length: 111, label: "inverter" },
         { start: 0xE004, length: 0xE012 - 0xE004, label: "control" },
     ];
+    if (options.read_power_control === true) {
+        blocks.push({ start: 0xF000, length: 4, label: "powercontrol" });
+    }
     for (let battery = 0; battery < batteryCount; battery++) {
         const base = deviceSpecs_1.BATTERY_BASE_ADDRESSES[battery];
         blocks.push({ start: base, length: 0xE16C - 0xE100, label: `battery${battery + 1}.block1` }, { start: base + (0xE16C - 0xE100), length: 0xE19A - 0xE16C, label: `battery${battery + 1}.block2` });
