@@ -20,7 +20,7 @@ export interface DetectedDevices {
 	batteries: number[];
 }
 
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-require-imports */
 // create a tcp modbus client (jsmodbus ships no type definitions)
 const modbus = require("jsmodbus");
 

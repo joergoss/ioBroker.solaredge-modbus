@@ -1,7 +1,10 @@
 "use strict";
-/* eslint-disable */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.writeValue = exports.extractValue = exports.extractBigUint64Sw = exports.isUnavailableNumber = exports.SUNSPEC_NOT_IMPLEMENTED_FLOAT32 = exports.NOT_IMPLEMENTED_UINT64 = void 0;
+exports.SUNSPEC_NOT_IMPLEMENTED_FLOAT32 = exports.NOT_IMPLEMENTED_UINT64 = void 0;
+exports.isUnavailableNumber = isUnavailableNumber;
+exports.extractBigUint64Sw = extractBigUint64Sw;
+exports.extractValue = extractValue;
+exports.writeValue = writeValue;
 /** SunSpec/SolarEdge marker for a value the device does not provide. */
 exports.NOT_IMPLEMENTED_UINT64 = BigInt("0xFFFFFFFFFFFFFFFF");
 /**
@@ -16,7 +19,6 @@ exports.SUNSPEC_NOT_IMPLEMENTED_FLOAT32 = -3.4028234663852886e+38;
 function isUnavailableNumber(value) {
     return !Number.isFinite(value) || value === exports.SUNSPEC_NOT_IMPLEMENTED_FLOAT32;
 }
-exports.isUnavailableNumber = isUnavailableNumber;
 /**
  * Reads a 64 bit unsigned integer with reversed *register* order.
  *
@@ -37,7 +39,6 @@ function extractBigUint64Sw(buffer, offset) {
     }
     return swapped.readBigUInt64BE(0);
 }
-exports.extractBigUint64Sw = extractBigUint64Sw;
 function extractValue(type, len, buffer, offset) {
     let i1;
     let i2;
@@ -176,7 +177,6 @@ function extractValue(type, len, buffer, offset) {
             return 0;
     }
 }
-exports.extractValue = extractValue;
 function writeValue(type, value) {
     let a0;
     let a1;
@@ -365,5 +365,4 @@ function writeValue(type, value) {
     }
     return buffer;
 }
-exports.writeValue = writeValue;
 //# sourceMappingURL=common.js.map

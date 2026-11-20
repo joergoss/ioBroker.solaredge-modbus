@@ -1,6 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IDENTIFICATION_BLOCK_LENGTH = exports.evaluateMeter = exports.evaluateBattery = exports.readMeterIdentity = exports.readBatteryIdentity = exports.isPrintableText = void 0;
+exports.IDENTIFICATION_BLOCK_LENGTH = void 0;
+exports.isPrintableText = isPrintableText;
+exports.readBatteryIdentity = readBatteryIdentity;
+exports.readMeterIdentity = readMeterIdentity;
+exports.evaluateBattery = evaluateBattery;
+exports.evaluateMeter = evaluateMeter;
 const common_1 = require("./common");
 const deviceSpecs_1 = require("./deviceSpecs");
 /** Empty slots return control characters / 0x7F garbage instead of text. */
@@ -11,7 +16,6 @@ function isPrintableText(value) {
     }
     return /^[\x20-\x7E]+$/.test(trimmed);
 }
-exports.isPrintableText = isPrintableText;
 function readBatteryIdentity(tmd, slot) {
     const base = deviceSpecs_1.BATTERY_BASE_ADDRESSES[slot - 1];
     return {
@@ -24,7 +28,6 @@ function readBatteryIdentity(tmd, slot) {
         ratedEnergy: (0, common_1.extractValue)("floatsw", 2, tmd, base + 66),
     };
 }
-exports.readBatteryIdentity = readBatteryIdentity;
 function readMeterIdentity(tmd, slot) {
     const base = deviceSpecs_1.METER_BASE_ADDRESSES[slot - 1];
     return {
@@ -37,7 +40,6 @@ function readMeterIdentity(tmd, slot) {
         sunspecDid: (0, common_1.extractValue)("uint16be", 1, tmd, base + 65),
     };
 }
-exports.readMeterIdentity = readMeterIdentity;
 function evaluateBattery(identity, alreadySeenSerials) {
     const fail = (reason) => ({ present: false, reason, identity });
     if (identity.ratedEnergy === undefined || !Number.isFinite(identity.ratedEnergy) || identity.ratedEnergy <= 0) {
@@ -55,7 +57,6 @@ function evaluateBattery(identity, alreadySeenSerials) {
     }
     return { present: true, reason: `${identity.manufacturer.trim()} ${identity.model.trim()}, ${identity.ratedEnergy} Wh, serial ${serial}`, identity };
 }
-exports.evaluateBattery = evaluateBattery;
 function evaluateMeter(identity) {
     const fail = (reason) => ({ present: false, reason, identity });
     // SunSpec meter models: 201 single phase, 202 split phase, 203 three phase
@@ -67,7 +68,6 @@ function evaluateMeter(identity) {
     }
     return { present: true, reason: `${identity.manufacturer.trim()} ${identity.model.trim()}, DID ${identity.sunspecDid}`, identity };
 }
-exports.evaluateMeter = evaluateMeter;
 /** How many registers must be read to identify a device slot. */
 exports.IDENTIFICATION_BLOCK_LENGTH = 68;
 //# sourceMappingURL=deviceDetection.js.map

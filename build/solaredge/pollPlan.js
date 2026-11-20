@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.buildPollPlan = void 0;
+exports.buildPollPlan = buildPollPlan;
 const deviceSpecs_1 = require("./deviceSpecs");
 function clampInt(value, fallback, min, max) {
     if (typeof value !== "number" || !Number.isFinite(value)) {
@@ -61,5 +61,4 @@ function buildPollPlan(options = {}) {
     }
     return split;
 }
-exports.buildPollPlan = buildPollPlan;
 //# sourceMappingURL=pollPlan.js.map

@@ -16,7 +16,7 @@
     "url": "https://github.com/joergoss/ioBroker.solaredge-modbus"
   },
   "dependencies": {
-    "@iobroker/adapter-core": "^2.5.1",
+    "@iobroker/adapter-core": "^3.4.3",
     "jsmodbus": "^5.0.0"
   },
   "devDependencies": {
@@ -24,27 +24,23 @@
     "@iobroker/testing": "^6.3.2",
     "@types/chai": "^4.3.0",
     "@types/chai-as-promised": "^7.1.4",
-    "@types/gulp": "^4.0.9",
+    "@types/iobroker": "^4.0.5",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^14.18.10",
-    "@types/proxyquire": "^1.3.28",
+    "@types/node": "^22.20.5",
     "@types/sinon": "^10.0.10",
     "@types/sinon-chai": "^3.2.8",
-    "@typescript-eslint/eslint-plugin": "^5.10.2",
-    "@typescript-eslint/parser": "^5.10.2",
-    "axios": "^0.25.0",
+    "@typescript-eslint/eslint-plugin": "^8.73.0",
+    "@typescript-eslint/parser": "^8.73.0",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
-    "eslint": "^7.32.0",
-    "gulp": "^4.0.2",
+    "eslint": "^9.39.5",
     "mocha": "^11.8.0",
-    "proxyquire": "^2.1.3",
     "rimraf": "^3.0.2",
     "sinon": "^13.0.1",
     "sinon-chai": "^3.7.0",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.4.0",
-    "typescript": "~4.4.4"
+    "typescript": "~5.9.3"
   },
   "main": "build/main.js",
   "files": [
@@ -67,7 +63,7 @@
     "test:integration": "mocha test/integration --exit",
     "test": "npm run test:ts && npm run test:package",
     "check": "tsc --noEmit",
-    "lint": "eslint --ext .ts src/",
+    "lint": "eslint src/",
     "release": "release-script"
   },
   "bugs": {
