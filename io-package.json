@@ -275,7 +275,10 @@
         "keywords": [
             "solaredge modbus"
         ],
-        "license": "MIT",
+        "licenseInformation": {
+            "type": "free",
+            "license": "MIT"
+        },
         "platform": "Javascript/Node.js",
         "main": "build/main.js",
         "icon": "solaredge-modbus.png",
@@ -285,6 +288,7 @@
         "loglevel": "info",
         "mode": "daemon",
         "type": "energy",
+        "tier": 3,
         "compact": true,
         "connectionType": "local",
         "dataSource": "poll",
