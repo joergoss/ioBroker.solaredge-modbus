@@ -100,6 +100,14 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.0.26 (2026-11-20)
+* (joergoss) fix ac.I_AC_Energy_WH: read the scale factor as signed int16 (#1)
+* (joergoss) fix adapter lifecycle: clear watchdog and main loop on unload, close sockets on errors and timeouts (#2)
+* (joergoss) calm connection logging: real error messages instead of "{}", throttled repeats and exponential backoff while the inverter sleeps at night (#2)
+* (joergoss) validate hostname/port/unitId before connecting instead of failing with ERR_MISSING_ARGS every second
+* (joergoss) new defaults for fresh instances: port 1502, unitId 1, connection_timeout 5000 ms
+* (joergoss) maintenance: CI repaired and running on node 22/24, mocha 11, @iobroker/testing 6, io-package schema (tier, licenseInformation), register level unit tests, repository moved to github.com/joergoss
+
 ### 0.0.25 (2022-09-13)
 fix I_AC_Energy_WH scaling factor
 add connection_timout parameter

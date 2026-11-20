@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "solaredge-modbus",
-        "version": "0.0.25",
+        "version": "0.0.26",
         "news": {
+            "0.0.26": {
+                "en": "fix ac.I_AC_Energy_WH signed scale factor (#1)\nfix adapter lifecycle and socket cleanup, calmed connection error logging and backoff (#2)\nvalidate configuration before connecting; new defaults for port, unitId and connection timeout\nmaintenance: working CI on node 22/24, updated test tooling, register level unit tests",
+                "de": "ac.I_AC_Energy_WH: Skalierungsfaktor jetzt vorzeichenbehaftet gelesen (#1)\nAdapter-Lebenszyklus und Socket-Aufraeumarbeiten korrigiert, Fehler-Logging beruhigt, Backoff (#2)\nKonfiguration wird vor dem Verbindungsaufbau geprueft; neue Standardwerte fuer Port, unitId und Verbindungs-Timeout\nPflege: funktionierende CI auf Node 22/24, aktualisierte Test-Werkzeuge, Unit-Tests auf Register-Ebene"
+            },
             "0.0.25": {
                 "en": "fix I_AC_Energy_WH scaling factor\nadd connection_timout parameter",
                 "de": "fix I_AC_Energy_WH Skalierungsfaktor\nverbindungs_timout parameter",
