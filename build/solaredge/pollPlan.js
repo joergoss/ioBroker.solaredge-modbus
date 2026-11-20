@@ -27,6 +27,9 @@ function buildPollPlan(options = {}) {
     if (options.read_power_control === true) {
         blocks.push({ start: 0xF000, length: 4, label: "powercontrol" });
     }
+    if (options.read_export_control === true) {
+        blocks.push({ start: 0xF700, length: 4, label: "exportcontrol" });
+    }
     for (const slot of batterySlots) {
         const base = deviceSpecs_1.BATTERY_BASE_ADDRESSES[slot - 1];
         if (base === undefined)
