@@ -1,0 +1,175 @@
+{
+    "i18n": true,
+    "type": "panel",
+    "items": {
+        "_connectionHeader": {
+            "type": "header",
+            "text": "connectionSection",
+            "size": 3
+        },
+        "hostname": {
+            "type": "text",
+            "label": "hostname",
+            "help": "hostnameHelp",
+            "placeholder": "192.168.1.50",
+            "newLine": true,
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "port": {
+            "type": "number",
+            "label": "port",
+            "help": "portHelp",
+            "min": 1,
+            "max": 65535,
+            "step": 1,
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "unitId": {
+            "type": "number",
+            "label": "unitId",
+            "help": "unitIdHelp",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "connection_timeout": {
+            "type": "number",
+            "label": "connectionTimeout",
+            "help": "connectionTimeoutHelp",
+            "min": 500,
+            "max": 30000,
+            "step": 100,
+            "unit": "ms",
+            "newLine": true,
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "com_wait_pause": {
+            "type": "number",
+            "label": "comWaitPause",
+            "help": "comWaitPauseHelp",
+            "min": 0,
+            "max": 5000,
+            "step": 10,
+            "unit": "ms",
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "main_loop_pause": {
+            "type": "number",
+            "label": "mainLoopPause",
+            "help": "mainLoopPauseHelp",
+            "min": 250,
+            "max": 60000,
+            "step": 100,
+            "unit": "ms",
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "_devicesHeader": {
+            "type": "header",
+            "text": "devicesSection",
+            "newLine": true,
+            "size": 3
+        },
+        "auto_detect_devices": {
+            "type": "checkbox",
+            "label": "autoDetect",
+            "help": "autoDetectHelp",
+            "newLine": true,
+            "xs": 12
+        },
+        "redetect_interval_minutes": {
+            "type": "number",
+            "label": "redetectInterval",
+            "help": "redetectIntervalHelp",
+            "min": 0,
+            "max": 1440,
+            "step": 1,
+            "unit": "min",
+            "hidden": "!data.auto_detect_devices",
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "meter_count": {
+            "type": "number",
+            "label": "meterCount",
+            "help": "meterCountHelp",
+            "min": 1,
+            "max": 3,
+            "step": 1,
+            "hidden": "data.auto_detect_devices",
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "battery_count": {
+            "type": "number",
+            "label": "batteryCount",
+            "help": "batteryCountHelp",
+            "min": 0,
+            "max": 2,
+            "step": 1,
+            "hidden": "data.auto_detect_devices",
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "_optionalHeader": {
+            "type": "header",
+            "text": "optionalSection",
+            "newLine": true,
+            "size": 3
+        },
+        "read_power_control": {
+            "type": "checkbox",
+            "label": "readPowerControl",
+            "help": "readPowerControlHelp",
+            "newLine": true,
+            "xs": 12
+        },
+        "read_export_control": {
+            "type": "checkbox",
+            "label": "readExportControl",
+            "help": "readExportControlHelp",
+            "newLine": true,
+            "xs": 12
+        },
+        "_diagnosticsHeader": {
+            "type": "header",
+            "text": "diagnosticsSection",
+            "newLine": true,
+            "size": 3
+        },
+        "max_register_block_size": {
+            "type": "number",
+            "label": "maxRegisterBlockSize",
+            "help": "maxRegisterBlockSizeHelp",
+            "min": 0,
+            "max": 125,
+            "step": 1,
+            "newLine": true,
+            "xs": 12,
+            "sm": 6,
+            "md": 4
+        },
+        "log_raw_registers": {
+            "type": "checkbox",
+            "label": "logRawRegisters",
+            "help": "logRawRegistersHelp",
+            "newLine": true,
+            "xs": 12
+        }
+    }
+}
