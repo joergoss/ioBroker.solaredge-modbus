@@ -9,6 +9,8 @@
 
 import { expect } from "chai";
 import { SolaredgeModel } from "./solaredgeModel";
+import { createDeterministicBuffer, decodeAll } from "./modelSnapshot";
+import legacySnapshot from "./legacyModelSnapshot.json";
 
 /** Same buffer size as SolaredgeTCPModbus uses for a complete poll cycle. */
 function emptyRegisterBuffer(): Buffer {
@@ -104,6 +106,70 @@ describe("solaredgeModel register decoding", () => {
 		it("keeps zero as a real value", () => {
 			const model = new SolaredgeModel();
 			expect(model["battery.lifetime_export_energy_counter"].readRegister!(emptyRegisterBuffer())).to.equal(0);
+		});
+	});
+
+	describe("table driven meters and batteries", () => {
+
+		it("decodes every pre-existing state exactly like the hand written model", () => {
+			// Snapshot captured before the table driven rewrite (111 states).
+			// Any change to an offset, register type or scale factor shows up here.
+			const current = decodeAll(createDeterministicBuffer());
+			const legacy = legacySnapshot as Record<string, unknown>;
+
+			const differences: string[] = [];
+			for (const [key, expected] of Object.entries(legacy)) {
+				const actual = current[key];
+				if (expected === null && typeof actual === "number" && !Number.isFinite(actual)) {
+					// JSON.stringify(Infinity) was stored as null in the fixture
+					continue;
+				}
+				if (actual !== expected) {
+					differences.push(`${key}: ${expected} -> ${actual}`);
+				}
+			}
+			expect(differences, differences.slice(0, 10).join("\n")).to.be.empty;
+		});
+
+		it("keeps the historical battery 1 ids and adds battery 2 separately", () => {
+			const model = new SolaredgeModel();
+			// battery 1 must not be renamed - existing installations rely on it
+			expect(model["battery.SOE"]).to.exist;
+			expect(model["battery.lifetime_import_energy_counter"]).to.exist;
+			expect(model["battery.1.SOE"]).to.be.undefined;
+			expect(model["battery.2.SOE"]).to.exist;
+			expect(model["battery.2.lifetime_import_energy_counter"]).to.exist;
+		});
+
+		it("provides the same states for meter 1, 2 and 3", () => {
+			const model = new SolaredgeModel();
+			for (const meter of [1, 2, 3]) {
+				expect(model[`meter.${meter}.M_AC_Power`]).to.exist;
+				expect(model[`meter.${meter}.M_Imported`]).to.exist;
+				expect(model[`meter.${meter}.C_Manufacturer`]).to.exist;
+			}
+		});
+
+		it("decodes battery 2 from its own base address with reversed word order", () => {
+			const tmd = emptyRegisterBuffer();
+			// battery 2 export counter lives at 0xE200 + 0x76 = 0xE276
+			tmd.writeUInt16BE(0x1000, 0xE276 * 2);
+
+			const model = new SolaredgeModel();
+			expect(model["battery.2.lifetime_export_energy_counter"].readRegister!(tmd)).to.equal(4096);
+			// battery 1 at 0xE176 stays untouched
+			expect(model["battery.lifetime_export_energy_counter"].readRegister!(tmd)).to.equal(0);
+		});
+
+		it("decodes meter 2 power from the meter 2 base address", () => {
+			const tmd = emptyRegisterBuffer();
+			const base = 40123 + 0xae;
+			// M_AC_Power sits at offset 83 with its scale factor at 87
+			tmd.writeInt16BE(1234, (base + 83) * 2);
+			tmd.writeInt16BE(-1, (base + 87) * 2);
+
+			const model = new SolaredgeModel();
+			expect(model["meter.2.M_AC_Power"].readRegister!(tmd)).to.be.closeTo(123.4, 0.000001);
 		});
 	});
 
