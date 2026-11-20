@@ -241,6 +241,12 @@ class SolaredgeModbus extends utils.Adapter {
         // message instead of "ERROR - {}".
         await this.solaredge.readAndWrite(this.config);
         for (const [key, value] of Object.entries(this.solaredge.SolaredgeData)) {
+            // Same filter as initObjects: never write states for devices that are
+            // not configured/detected. Otherwise ioBroker warns about states with
+            // no existing object for every unpopulated meter/battery slot.
+            if (!this.isDeviceConfigured(key)) {
+                continue;
+            }
             const v = value;
             if (v.value !== v.valueOld) {
                 this.log.debug("setState: " + key + " : " + v.value);

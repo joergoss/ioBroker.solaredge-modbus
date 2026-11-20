@@ -147,6 +147,9 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.1.1 (2026-11-21)
+* (joergoss) fix: do not write states for meters/batteries that are not configured or detected - found on the live system, which logged "no existing object" warnings for every empty slot
+
 ### 0.1.0 (2026-11-21)
 * (joergoss) fix battery 64 bit lifetime counters and battery status: reversed word order, verified against a real SE10K + BYD capture (#4)
 * (joergoss) support meter 1-3 and battery 1-2 from table driven register definitions; battery 1 keeps its historical state ids
