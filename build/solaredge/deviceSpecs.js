@@ -89,7 +89,9 @@ exports.BATTERY_SPECS = [
     { name: "available_energy", descr: "Battery 1 Available Energy", unit: "Wh", type: "floatsw", len: 2, offset: 128 },
     { name: "SOH", descr: "Battery 1 State of Health (SOH)", unit: "", type: "floatsw", len: 2, offset: 130 },
     { name: "SOE", descr: "Battery 1 State of Energy (SOE)", unit: "", type: "floatsw", len: 2, offset: 132 },
-    { name: "status", descr: "Battery 1 Status", unit: "", type: "uint32be", len: 2, offset: 134 },
-    { name: "status_internal", descr: "Battery 1 Status Internal", unit: "", type: "uint32be", len: 2, offset: 136 },
+    // Verified against a real capture: raw registers [0x000A, 0x0000] are status
+    // 10, not 655360 - the battery block needs word swap here too (issue #4).
+    { name: "status", descr: "Battery 1 Status", unit: "", type: "uint32sw", len: 2, offset: 134 },
+    { name: "status_internal", descr: "Battery 1 Status Internal", unit: "", type: "uint32sw", len: 2, offset: 136 },
 ];
 //# sourceMappingURL=deviceSpecs.js.map

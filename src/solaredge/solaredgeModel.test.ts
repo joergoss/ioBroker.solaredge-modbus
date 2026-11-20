@@ -118,10 +118,17 @@ describe("solaredgeModel register decoding", () => {
 			const legacy = legacySnapshot as Record<string, unknown>;
 
 			const differences: string[] = [];
+			// These two changed on purpose after a real capture proved that the
+			// battery block needs word swap here as well (issue #4): status 10 was
+			// reported as 655360. Everything else must stay bit identical.
+			const intentionalChanges = ["battery.status", "battery.status_internal"];
 			for (const [key, expected] of Object.entries(legacy)) {
 				const actual = current[key];
 				if (expected === null && typeof actual === "number" && !Number.isFinite(actual)) {
 					// JSON.stringify(Infinity) was stored as null in the fixture
+					continue;
+				}
+				if (intentionalChanges.includes(key)) {
 					continue;
 				}
 				if (actual !== expected) {
