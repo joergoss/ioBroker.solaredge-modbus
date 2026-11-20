@@ -3,7 +3,22 @@
 import * as net from "net";
 import { SolaredgeHoldingRegister, SolaredgeDataEntry, SolaredgeModel, SolaredgeWriteSingleCoil, SolaredgeWriteMultipleHoldingRegister } from "./solaredgeModel";
 import { ConnectionSettings, withConnectionDefaults } from "./connectionPolicy";
-import { buildPollPlan, PollBlock } from "./pollPlan";
+import { buildPollPlan, PollBlock, PollPlanOptions } from "./pollPlan";
+import { isUnavailableNumber } from "./common";
+import {
+	IDENTIFICATION_BLOCK_LENGTH,
+	evaluateBattery,
+	evaluateMeter,
+	readBatteryIdentity,
+	readMeterIdentity,
+} from "./deviceDetection";
+import { BATTERY_BASE_ADDRESSES, METER_BASE_ADDRESSES } from "./deviceSpecs";
+
+/** Slots detected as actually populated, 1 based. */
+export interface DetectedDevices {
+	meters: number[];
+	batteries: number[];
+}
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 // create a tcp modbus client (jsmodbus ships no type definitions)
@@ -33,6 +48,9 @@ export class SolaredgeTCPModbus {
 	/** When enabled, every polled block is logged as raw hex for bug reports. */
 	private logRawRegisters = false
 
+	/** Set by main after a successful auto detection; overrides the counts. */
+	detectedDevices: DetectedDevices | undefined
+
 	SolaredgeData = new SolaredgeModel();
 	sendHoldingRegisterQueue: Array<SolaredgeWriteMultipleHoldingRegister> = []
 	sendCoilQueue: Array<SolaredgeWriteSingleCoil> = []
@@ -60,6 +78,12 @@ export class SolaredgeTCPModbus {
 				v.valueOld = v.value;
 				try {
 					v.value = v.readRegister(tmd)
+					// Never push Infinity/NaN or the SunSpec "not implemented" marker
+					// into ioBroker as if it were a measurement. Null also avoids the
+					// NaN !== NaN rewrite on every single cycle.
+					if (typeof v.value === "number" && isUnavailableNumber(v.value)) {
+						v.value = null
+					}
 				} catch (Exception) {
 					this.log.error("updateSolaredgeData ERROR '" + name + "'" + JSON.stringify(v) +  " Exception: " +JSON.stringify(Exception))
 				}
@@ -74,14 +98,23 @@ export class SolaredgeTCPModbus {
 		const client = await this.ensureConnected(config)
 
 		while (this.sendHoldingRegisterQueue.length > 0) {
-			const item = this.sendHoldingRegisterQueue.pop()
+			// FIFO, not pop(): queued control commands must keep their order,
+			// otherwise e.g. a later limit is applied before an earlier mode.
+			const item = this.sendHoldingRegisterQueue.shift()
 			this.log.debug("request writeMultipleRegisters " + JSON.stringify(item))
 			const response = await this.withTimeout(client.writeMultipleRegisters(item?.register, item?.value), "write", config.connection_timeout)
 			this.log.debug("response writeMultipleRegisters " + JSON.stringify(response))
 			await this.sleep(config.com_wait_pause)
 		}
 
-		for (const block of buildPollPlan(adapterConfig)) {
+		const planOptions: PollPlanOptions = { ...adapterConfig }
+		const detected = this.detectedDevices
+		if (detected) {
+			planOptions.meter_slots = detected.meters
+			planOptions.battery_slots = detected.batteries
+		}
+
+		for (const block of buildPollPlan(planOptions)) {
 			try {
 				await this.readHoldingRegisterBlock(client, block, config.connection_timeout)
 			} catch (e) {
@@ -102,6 +135,65 @@ export class SolaredgeTCPModbus {
 		}
 
 		await this.updateSolaredgeData(this.buf)
+	}
+
+	/**
+	 * Reads the identification block of every possible slot and decides which
+	 * devices really exist. Only reads; never writes. Detection runs once at
+	 * startup - after changing the wiring, restart the instance.
+	 */
+	async detectDevices(adapterConfig: ioBroker.AdapterConfig): Promise<DetectedDevices> {
+		const config = withConnectionDefaults(adapterConfig)
+		const client = await this.ensureConnected(config)
+		const detected: DetectedDevices = { meters: [], batteries: [] }
+		const batterySerials = new Set<string>()
+
+		for (let slot = 1; slot <= BATTERY_BASE_ADDRESSES.length; slot++) {
+			const base = BATTERY_BASE_ADDRESSES[slot - 1]
+			try {
+				await this.readHoldingRegisterBlock(client, { start: base, length: IDENTIFICATION_BLOCK_LENGTH, label: `detect-battery${slot}` }, config.connection_timeout)
+				const identity = readBatteryIdentity(this.buf, slot)
+				const result = evaluateBattery(identity, batterySerials)
+				if (result.present) {
+					detected.batteries.push(slot)
+					batterySerials.add(identity.serialNumber.trim())
+					this.log.info(`battery ${slot} detected: ${result.reason}`)
+				} else {
+					this.log.info(`no battery at slot ${slot}: ${result.reason}`)
+				}
+			} catch (e) {
+				if (e instanceof RequestTimeoutError) {
+					this.close()
+					throw e
+				}
+				this.log.info(`battery slot ${slot} not readable, treating as absent: ${e instanceof Error ? e.message : JSON.stringify(e)}`)
+			}
+			await this.sleep(config.com_wait_pause)
+		}
+
+		for (let slot = 1; slot <= METER_BASE_ADDRESSES.length; slot++) {
+			const base = METER_BASE_ADDRESSES[slot - 1]
+			try {
+				await this.readHoldingRegisterBlock(client, { start: base, length: IDENTIFICATION_BLOCK_LENGTH, label: `detect-meter${slot}` }, config.connection_timeout)
+				const identity = readMeterIdentity(this.buf, slot)
+				const result = evaluateMeter(identity)
+				if (result.present) {
+					detected.meters.push(slot)
+					this.log.info(`meter ${slot} detected: ${result.reason}`)
+				} else {
+					this.log.info(`no meter at slot ${slot}: ${result.reason}`)
+				}
+			} catch (e) {
+				if (e instanceof RequestTimeoutError) {
+					this.close()
+					throw e
+				}
+				this.log.info(`meter slot ${slot} not readable, treating as absent: ${e instanceof Error ? e.message : JSON.stringify(e)}`)
+			}
+			await this.sleep(config.com_wait_pause)
+		}
+
+		return detected
 	}
 
 	debugBuffer(): void {

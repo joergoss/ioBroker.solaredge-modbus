@@ -69,6 +69,16 @@ describe("buildPollPlan", () => {
 		expect(plan.map(b => b.start)).to.deep.equal(buildPollPlan().map(b => b.start));
 	});
 
+	it("supports sparse slot lists from auto detection", () => {
+		const plan = buildPollPlan({ battery_slots: [2], meter_slots: [1, 3] });
+		const starts = plan.map(b => b.start);
+		expect(starts).to.not.include(0xE100);
+		expect(starts).to.include(0xE200);
+		expect(starts).to.include(40123);
+		expect(starts).to.include(40471);
+		expect(starts).to.not.include(40297);
+	});
+
 	it("polls the power control block only when explicitly enabled", () => {
 		expect(buildPollPlan().some(b => b.label === "powercontrol")).to.be.false;
 		const plan = buildPollPlan({ read_power_control: true });
