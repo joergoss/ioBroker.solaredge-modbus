@@ -1,0 +1,11 @@
+{
+ "description": "Real read-only capture of the SolarEdge power control block (0xF000) from an SE10K. rrcr_state=0, active_power_limit=100 (%), cosphi=1.0 with word swap. No serial numbers in this block.",
+ "captured": "2026-11-20T21:50:34.588Z",
+ "blocks": {
+  "powercontrol": {
+   "start": 61440,
+   "length": 4,
+   "hex": "0000006400003f80"
+  }
+ }
+}

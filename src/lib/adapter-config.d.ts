@@ -10,6 +10,11 @@ declare global {
 			com_wait_pause: number;
 			main_loop_pause: number;
 			connection_timeout: number
+			log_raw_registers: boolean
+			meter_count: number
+			battery_count: number
+			max_register_block_size: number
+			read_power_control: boolean
 		}
 	}
 }

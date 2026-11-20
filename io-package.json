@@ -297,7 +297,12 @@
         "unitId": 1,
         "com_wait_pause": 200,
         "main_loop_pause": 1000,
-        "connection_timeout": 5000
+        "connection_timeout": 5000,
+        "log_raw_registers": false,
+        "meter_count": 1,
+        "battery_count": 1,
+        "max_register_block_size": 0,
+        "read_power_control": false
     },
     "objects": [],
     "instanceObjects": []

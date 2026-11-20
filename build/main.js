@@ -85,6 +85,9 @@ class SolaredgeModbus extends utils.Adapter {
         await this.initConnectionInfoObject();
         if (this.solaredge) {
             for (const [key, value] of Object.entries(this.solaredge.SolaredgeData)) {
+                if (!this.isDeviceConfigured(key)) {
+                    continue;
+                }
                 const v = value;
                 await this.setObjectNotExistsAsync(key, {
                     type: "state",
@@ -101,6 +104,25 @@ class SolaredgeModbus extends utils.Adapter {
                 });
             }
         }
+    }
+    /**
+     * Only create objects for devices that are actually configured. Nothing is
+     * ever deleted, so reducing a count later leaves existing objects in place.
+     * Battery 1 uses the historical unnumbered "battery.*" ids.
+     */
+    isDeviceConfigured(key) {
+        var _a, _b, _c;
+        const meter = /^meter\.(\d+)\./.exec(key);
+        if (meter) {
+            return Number(meter[1]) <= ((_a = this.config.meter_count) !== null && _a !== void 0 ? _a : 1);
+        }
+        if (key.startsWith("battery.2.")) {
+            return ((_b = this.config.battery_count) !== null && _b !== void 0 ? _b : 1) >= 2;
+        }
+        if (key.startsWith("battery.")) {
+            return ((_c = this.config.battery_count) !== null && _c !== void 0 ? _c : 1) >= 1;
+        }
+        return true;
     }
     async mainLoop() {
         this.log.debug("mainloop: start");

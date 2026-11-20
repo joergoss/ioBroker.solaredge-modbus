@@ -24,6 +24,7 @@ exports.SolaredgeTCPModbus = void 0;
 const net = __importStar(require("net"));
 const solaredgeModel_1 = require("./solaredgeModel");
 const connectionPolicy_1 = require("./connectionPolicy");
+const pollPlan_1 = require("./pollPlan");
 /* eslint-disable @typescript-eslint/no-var-requires */
 // create a tcp modbus client (jsmodbus ships no type definitions)
 const modbus = require("jsmodbus");
@@ -31,6 +32,8 @@ class SolaredgeTCPModbus {
     constructor(log) {
         this.bufferSize = 0xFFFF;
         this.buf = Buffer.alloc(this.bufferSize * 2);
+        /** When enabled, every polled block is logged as raw hex for bug reports. */
+        this.logRawRegisters = false;
         this.SolaredgeData = new solaredgeModel_1.SolaredgeModel();
         this.sendHoldingRegisterQueue = [];
         this.sendCoilQueue = [];
@@ -59,6 +62,7 @@ class SolaredgeTCPModbus {
     }
     async readAndWrite(adapterConfig) {
         const config = (0, connectionPolicy_1.withConnectionDefaults)(adapterConfig);
+        this.logRawRegisters = adapterConfig.log_raw_registers === true;
         await this.connect(config, async (client) => {
             while (this.sendHoldingRegisterQueue.length > 0) {
                 const item = this.sendHoldingRegisterQueue.pop();
@@ -67,28 +71,28 @@ class SolaredgeTCPModbus {
                 this.log.debug("response writeSingleRegister " + JSON.stringify(response));
                 await this.sleep(config.com_wait_pause);
             }
-            await this.readHoldingRegisterBlock(client, 0, 111); // sun-spec block
-            await this.sleep(config.com_wait_pause);
-            await this.readHoldingRegisterBlock(client, 0xE004, 0xE012 - 0xE004); // control block
-            await this.sleep(config.com_wait_pause);
-            await this.readHoldingRegisterBlock(client, 0xE100, 0xE16C - 0xE100); // battery1 block1
-            await this.sleep(config.com_wait_pause);
-            await this.readHoldingRegisterBlock(client, 0xE16C, 0xE19A - 0xE16C); // battery1 block2
-            await this.sleep(config.com_wait_pause);
-            await this.readHoldingRegisterBlock(client, 40123, 40226 - 40123); // meter 1 block1
-            await this.sleep(config.com_wait_pause);
-            await this.readHoldingRegisterBlock(client, 40227, 40294 - 40227); // meter 1 block2
-            await this.sleep(config.com_wait_pause);
+            // Which devices are polled, and how large each request may be, is
+            // defined by the poll plan (meter_count / battery_count /
+            // max_register_block_size).
+            for (const block of (0, pollPlan_1.buildPollPlan)(adapterConfig)) {
+                await this.readHoldingRegisterBlock(client, block.start, block.length, block.label);
+                await this.sleep(config.com_wait_pause);
+            }
             await this.updateSolaredgeData(this.buf);
         });
     }
     debugBuffer() {
         this.log.debug("SolaredgeHoldingRegister debugBuffer " + JSON.stringify(this.buf));
     }
-    async readHoldingRegisterBlock(client, start, end) {
-        const block = await client.readHoldingRegisters(start, end);
+    async readHoldingRegisterBlock(client, start, length, label = "") {
+        const block = await client.readHoldingRegisters(start, length);
         const b = Buffer.from(block.response._body._valuesAsBuffer);
         b.copy(this.buf, start * 2);
+        if (this.logRawRegisters) {
+            // One copyable line per block: register range plus the exact bytes as
+            // they arrived. Users can paste this into a bug report (issues #4/#5).
+            this.log.info(`raw registers ${label} 0x${start.toString(16)}..0x${(start + length - 1).toString(16)} (${length} registers): ${b.toString("hex")}`);
+        }
     }
     /**
      * Closes an open connection. Safe to call repeatedly and from onUnload.

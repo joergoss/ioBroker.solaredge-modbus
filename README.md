@@ -13,7 +13,54 @@
 
 ## solaredge-modbus adapter for ioBroker
 
-solaredge-modbus adapter
+Reads a SolarEdge inverter directly via **local SunSpec Modbus TCP** - no SolarEdge cloud account and no internet connection required. Provides inverter, meter and battery values as ioBroker states and supports the SolarEdge storage control registers for writing.
+
+### Requirements
+
+- Modbus TCP enabled on the inverter (SolarEdge SetApp: *Site Communication → Modbus TCP*, default port **1502**).
+- The inverter accepts **only one Modbus TCP client at a time**. Stop other Modbus clients (another ioBroker modbus instance, Home Assistant, evcc, …) before enabling this adapter, otherwise you will see connection errors.
+
+### Installation
+
+Until the adapter is published on npm, install it in the ioBroker admin via *Adapters → Install from custom URL* using the GitHub repository URL, or from the command line:
+
+```bash
+iobroker url https://github.com/joergoss/ioBroker.solaredge-modbus
+```
+
+### Configuration
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `hostname` | – | IP address or hostname of the inverter (required) |
+| `port` | 1502 | Modbus TCP port |
+| `unitId` | 1 | Modbus unit id of the inverter |
+| `meter_count` | 1 | Number of connected SolarEdge meters (1–3) |
+| `battery_count` | 1 | Number of batteries (0–2). Set **0** if no battery is installed - the battery blocks are then not polled at all |
+| `com_wait_pause` | 200 | Pause in ms between two Modbus requests |
+| `main_loop_pause` | 1000 | Pause in ms between two poll cycles |
+| `connection_timeout` | 5000 | Connection/socket timeout in ms |
+| `max_register_block_size` | 0 | 0 = default requests. Set e.g. 40 to split long reads into smaller chunks. **Caution:** at least one tested firmware stops answering when the battery block is split - use only together with `log_raw_registers` for diagnosis |
+| `read_power_control` | off | Additionally reads the power control block 0xF000 (`rrcr_state`, `active_power_limit`, `cosphi`). Leave off if your firmware does not implement it |
+| `log_raw_registers` | off | Log every polled block as raw hex values - only for collecting bug report data |
+
+### Provided states
+
+- `common.*` - SunSpec identification (manufacturer, model, serial number, firmware)
+- `ac.*`, `dc.*`, `state.*` - inverter measurements, temperature and status
+- `meter.1.*` … `meter.3.*` - per meter currents, voltages, power and energy counters
+- `battery.*` - battery 1 (historical, unnumbered ids), `battery.2.*` - battery 2
+- `control.*` - SolarEdge storage control, writable states are applied on the next poll cycle
+- `powercontrol.*` - optional power control block (RRCR state, active power limit, cos phi), enable with `read_power_control`
+- `info.connection` - true while the inverter answers
+
+### Troubleshooting
+
+**Frequent errors at night or when the inverter changes state:** the inverter simply stops answering Modbus requests while it sleeps. The adapter retries with an increasing delay (up to 60 s) and only logs the first failure plus every 30th one, instead of flooding the log.
+
+**Implausible battery energy counters:** fixed in the current development version - the battery block needs reversed word order, which the lifetime counters previously did not use.
+
+**To report a decoding problem:** enable `log_raw_registers` for a short time and attach the log lines (`raw registers …`) to your GitHub issue. They contain the exact bytes received, which makes a register-by-register comparison possible without access to your inverter.
 
 ## Developer manual
 This section is intended for the developer. It can be deleted later

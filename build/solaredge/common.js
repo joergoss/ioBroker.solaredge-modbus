@@ -1,7 +1,30 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.writeValue = exports.extractValue = void 0;
 /* eslint-disable */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.writeValue = exports.extractValue = exports.extractBigUint64Sw = exports.NOT_IMPLEMENTED_UINT64 = void 0;
+/** SunSpec/SolarEdge marker for a value the device does not provide. */
+exports.NOT_IMPLEMENTED_UINT64 = BigInt("0xFFFFFFFFFFFFFFFF");
+/**
+ * Reads a 64 bit unsigned integer with reversed *register* order.
+ *
+ * SolarEdge stores the battery block with little endian word order while the
+ * bytes inside each 16 bit register stay big endian - the same convention the
+ * model already uses as "floatsw" for the battery floats. Reading these
+ * counters as plain big endian ("uint64be") moved a small Wh value into the
+ * highest word and produced absurdly large numbers (issue #4).
+ *
+ * @param buffer buffer holding the polled registers
+ * @param offset zero based register number, e.g. 0xE176
+ */
+function extractBigUint64Sw(buffer, offset) {
+    const swapped = Buffer.alloc(8);
+    for (let word = 0; word < 4; word++) {
+        const source = offset * 2 + (3 - word) * 2;
+        buffer.copy(swapped, word * 2, source, source + 2);
+    }
+    return swapped.readBigUInt64BE(0);
+}
+exports.extractBigUint64Sw = extractBigUint64Sw;
 function extractValue(type, len, buffer, offset) {
     let i1;
     let i2;
@@ -64,6 +87,8 @@ function extractValue(type, len, buffer, offset) {
             return buffer.readUInt32BE(offset * 2) * 0x100000000 + buffer.readUInt32BE(offset * 2 + 4);
         case "uint64le":
             return buffer.readUInt32LE(offset * 2) + buffer.readUInt32LE(offset * 2 + 4) * 0x100000000;
+        case "uint64sw":
+            return Number(extractBigUint64Sw(buffer, offset));
         case "int64be":
             i1 = buffer.readInt32BE(offset * 2);
             i2 = buffer.readUInt32BE(offset * 2 + 4);
