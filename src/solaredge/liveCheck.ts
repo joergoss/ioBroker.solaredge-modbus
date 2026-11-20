@@ -7,7 +7,8 @@
  *
  * usage: npx ts-node src/solaredge/liveCheck.ts <host> [cycles] [port]
  */
-/// <reference path="../lib/adapter-config.d.ts" />
+// pulls in the global AdapterConfig augmentation when run standalone via ts-node
+import type {} from "../lib/adapter-config";
 import { SolaredgeTCPModbus } from "./solaredgeTCPModbus";
 
 async function main(): Promise<void> {
