@@ -1,4 +1,17 @@
-import { extractValue, writeValue } from "./common";
+import { extractValue, writeValue, extractBigUint64Sw, NOT_IMPLEMENTED_UINT64 } from "./common";
+
+/**
+ * Battery lifetime counters are 64 bit values in reversed register order and
+ * may contain the SunSpec "not implemented" marker. Returning null keeps the
+ * state empty instead of showing ~1.8e19 Wh (issue #4).
+ */
+function readBatteryEnergyCounter(tmd: Buffer, offset: number): number | null {
+	const raw = extractBigUint64Sw(tmd, offset);
+	if (raw === NOT_IMPLEMENTED_UINT64) {
+		return null;
+	}
+	return Number(raw);
+}
 // import { round, signedToInteger } from "./solaredgeUtil";
 
 export interface SolaredgeDataEntry {
@@ -503,7 +516,7 @@ export class SolaredgeModel {
 		unit:  "Wh",
 		role:  "value",
 		type: "number",
-		readRegister:  (tmd: Buffer) =>  extractValue("uint64be", 4, tmd, 0xE176) as number,
+		readRegister:  (tmd: Buffer) =>  readBatteryEnergyCounter(tmd, 0xE176),
 		value: 0,
 	};
 
@@ -512,7 +525,7 @@ export class SolaredgeModel {
 		unit:  "Wh",
 		role:  "value",
 		type: "number",
-		readRegister:  (tmd: Buffer) =>  extractValue("uint64be", 4, tmd, 0xE17A) as number,
+		readRegister:  (tmd: Buffer) =>  readBatteryEnergyCounter(tmd, 0xE17A),
 		value: 0,
 	};
 

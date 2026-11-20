@@ -2,6 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SolaredgeModel = exports.SolaredgeModbusData = void 0;
 const common_1 = require("./common");
+/**
+ * Battery lifetime counters are 64 bit values in reversed register order and
+ * may contain the SunSpec "not implemented" marker. Returning null keeps the
+ * state empty instead of showing ~1.8e19 Wh (issue #4).
+ */
+function readBatteryEnergyCounter(tmd, offset) {
+    const raw = (0, common_1.extractBigUint64Sw)(tmd, offset);
+    if (raw === common_1.NOT_IMPLEMENTED_UINT64) {
+        return null;
+    }
+    return Number(raw);
+}
 class SolaredgeModbusData {
     constructor(hr, config) {
         this.hr = hr;
@@ -415,7 +427,7 @@ class SolaredgeModel {
             unit: "Wh",
             role: "value",
             type: "number",
-            readRegister: (tmd) => (0, common_1.extractValue)("uint64be", 4, tmd, 0xE176),
+            readRegister: (tmd) => readBatteryEnergyCounter(tmd, 0xE176),
             value: 0,
         };
         this["battery.lifetime_import_energy_counter"] = {
@@ -423,7 +435,7 @@ class SolaredgeModel {
             unit: "Wh",
             role: "value",
             type: "number",
-            readRegister: (tmd) => (0, common_1.extractValue)("uint64be", 4, tmd, 0xE17A),
+            readRegister: (tmd) => readBatteryEnergyCounter(tmd, 0xE17A),
             value: 0,
         };
         this["battery.max_energy"] = {
