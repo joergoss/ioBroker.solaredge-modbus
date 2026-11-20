@@ -16,7 +16,7 @@
     "url": "https://github.com/joergoss/ioBroker.solaredge-modbus"
   },
   "dependencies": {
-    "@iobroker/adapter-core": "^2.5.1",
+    "@iobroker/adapter-core": "^3.4.3",
     "jsmodbus": "^5.0.0"
   },
   "devDependencies": {
