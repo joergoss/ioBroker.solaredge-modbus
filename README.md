@@ -147,6 +147,15 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.1.0 (2026-11-21)
+* (joergoss) fix battery 64 bit lifetime counters and battery status: reversed word order, verified against a real SE10K + BYD capture (#4)
+* (joergoss) support meter 1-3 and battery 1-2 from table driven register definitions; battery 1 keeps its historical state ids
+* (joergoss) optional power control block 0xF000 (rrcr_state, active_power_limit, cosphi)
+* (joergoss) optional automatic detection of meters and batteries from their identification blocks (opt-in for existing instances)
+* (joergoss) persistent modbus session instead of reconnecting every second, per-request timeouts, block level fault tolerance (#13)
+* (joergoss) control commands are written FIFO; invalid values (Infinity/NaN/not implemented) become null; meaningful ioBroker roles per unit; metadata of existing objects is refreshed
+* (joergoss) diagnostics: raw register logging, offline capture decoding, live check tool; dependabot enabled
+
 ### 0.0.26 (2026-11-20)
 * (joergoss) fix ac.I_AC_Energy_WH: read the scale factor as signed int16 (#1)
 * (joergoss) fix adapter lifecycle: clear watchdog and main loop on unload, close sockets on errors and timeouts (#2)

@@ -29,6 +29,15 @@ async function main() {
         max_register_block_size: 0,
         read_power_control: true,
     };
+    // run auto detection first, exactly like a freshly configured instance
+    try {
+        const detected = await modbus.detectDevices(config);
+        modbus.detectedDevices = detected;
+        console.log(`detected: meters [${detected.meters.join(",")}], batteries [${detected.batteries.join(",")}]\n`);
+    }
+    catch (e) {
+        console.log("detection failed:", e.message);
+    }
     let failures = 0;
     for (let cycle = 1; cycle <= cycles; cycle++) {
         const t0 = Date.now();
