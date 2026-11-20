@@ -300,11 +300,12 @@
         ]
     },
     "native": {
-        "option1": true,
-        "option2": "42",
+        "hostname": "",
+        "port": 1502,
+        "unitId": 1,
         "com_wait_pause": 200,
         "main_loop_pause": 1000,
-        "connection_timeout": 1000
+        "connection_timeout": 5000
     },
     "objects": [],
     "instanceObjects": []

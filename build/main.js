@@ -27,8 +27,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const utils = __importStar(require("@iobroker/adapter-core"));
 const solaredgeTCPModbus_1 = require("./solaredge/solaredgeTCPModbus");
 const solaredgeUtil_1 = require("./solaredge/solaredgeUtil");
-// Load your modules here, e.g.:
-// import * as fs from "fs";
+const connectionPolicy_1 = require("./solaredge/connectionPolicy");
 class SolaredgeModbus extends utils.Adapter {
     constructor(options = {}) {
         super({
@@ -36,10 +35,10 @@ class SolaredgeModbus extends utils.Adapter {
             name: "solaredge-modbus",
         });
         this.mainLoopRunning = true;
+        this.consecutiveErrors = 0;
+        this.configProblem = null;
         this.on("ready", this.onReady.bind(this));
         this.on("stateChange", this.onStateChange.bind(this));
-        // this.on("objectChange", this.onObjectChange.bind(this));
-        // this.on("message", this.onMessage.bind(this));
         this.on("unload", this.onUnload.bind(this));
     }
     /**
@@ -51,10 +50,6 @@ class SolaredgeModbus extends utils.Adapter {
         this.initObjects();
         // In order to get state updates, you need to subscribe to them. The following line adds a subscription for our variable we have created above.
         this.subscribeStates("control.*");
-        // You can also add a subscription for multiple states. The following line watches all states starting with "lights."
-        // this.subscribeStates("lights.*");
-        // Or, if you really must, you can also watch all states. Don't do this if you don't need to. Otherwise this will cause a lot of unnecessary load on the system:
-        // this.subscribeStates("*");
         this.startWatchDog();
         this.mainLoop();
     }
@@ -62,13 +57,24 @@ class SolaredgeModbus extends utils.Adapter {
      * Is called when adapter shuts down - callback has to be called under any circumstances!
      */
     onUnload(callback) {
+        var _a;
         try {
-            // Here you must clear all timeouts or intervals that may still be active
-            // clearTimeout(timeout1);
-            // clearTimeout(timeout2);
-            // ...
-            // clearInterval(interval1);
             this.mainLoopRunning = false;
+            if (this.watchDogInterval) {
+                clearInterval(this.watchDogInterval);
+                this.watchDogInterval = undefined;
+            }
+            // Wake the main loop up instead of letting it sleep into the next
+            // adapter incarnation - that caused "DB closed" errors after restarts.
+            if (this.mainLoopSleepTimeout) {
+                clearTimeout(this.mainLoopSleepTimeout);
+                this.mainLoopSleepTimeout = undefined;
+            }
+            if (this.mainLoopSleepResolve) {
+                this.mainLoopSleepResolve();
+                this.mainLoopSleepResolve = undefined;
+            }
+            (_a = this.solaredge) === null || _a === void 0 ? void 0 : _a.close();
             callback();
         }
         catch (e) {
@@ -99,20 +105,64 @@ class SolaredgeModbus extends utils.Adapter {
     async mainLoop() {
         this.log.debug("mainloop: start");
         while (this.mainLoopRunning) {
-            this.log.debug("mainloop: while");
-            await this.updateStates();
-            this.log.debug("sleep: " + this.config.main_loop_pause);
-            await this.sleep(this.config.main_loop_pause);
+            const configProblem = (0, connectionPolicy_1.validateConnectionConfig)(this.config);
+            if (configProblem) {
+                this.reportConfigProblem(configProblem);
+                await this.sleep(connectionPolicy_1.INVALID_CONFIG_RETRY_MS);
+                continue;
+            }
+            if (this.configProblem) {
+                this.log.info("configuration is valid now, starting to poll the inverter");
+                this.configProblem = null;
+            }
+            let delay = (0, connectionPolicy_1.withConnectionDefaults)(this.config).main_loop_pause;
+            try {
+                await this.updateStates();
+                if (this.consecutiveErrors > 0) {
+                    this.log.info(`connection to ${this.config.hostname} restored after ${this.consecutiveErrors} failed poll cycle(s)`);
+                }
+                this.consecutiveErrors = 0;
+            }
+            catch (e) {
+                this.consecutiveErrors++;
+                if (this.solaredge) {
+                    this.solaredge.lastConnectedTimestamp = 0;
+                }
+                const reason = (0, connectionPolicy_1.formatError)(e);
+                if ((0, connectionPolicy_1.shouldLogConnectionError)(this.consecutiveErrors)) {
+                    this.log.error(`poll cycle failed (${this.consecutiveErrors} in a row): ${reason}`);
+                }
+                else {
+                    this.log.debug(`poll cycle failed (${this.consecutiveErrors} in a row): ${reason}`);
+                }
+                delay = (0, connectionPolicy_1.backoffDelayMs)(delay, this.consecutiveErrors);
+            }
+            this.log.debug("sleep: " + delay);
+            await this.sleep(delay);
         }
         this.log.debug("mainloop: end");
     }
+    /** Reports a broken configuration once per change instead of once per second. */
+    reportConfigProblem(problem) {
+        if (this.configProblem === problem) {
+            return;
+        }
+        this.configProblem = problem;
+        this.log.error(`invalid adapter configuration: ${problem}. Please check the instance settings - no connection attempt is made.`);
+        void this.setInfoConnectionState(false);
+    }
     async startWatchDog() {
-        setInterval(async () => {
+        this.watchDogInterval = setInterval(async () => {
+            if (!this.mainLoopRunning) {
+                return;
+            }
             if (this.solaredge) {
                 const timeDiff = (Date.now() - this.solaredge.lastConnectedTimestamp);
                 if (this.solaredge.lastConnectedTimestamp == 0 || timeDiff > 10000) {
                     this.solaredge.connectionErrorCounter++;
-                    this.log.warn("setInfoConnectionState: false - connection lost ! connectionErrorCounter:" + this.solaredge.connectionErrorCounter);
+                    if ((0, connectionPolicy_1.shouldLogConnectionError)(this.solaredge.connectionErrorCounter)) {
+                        this.log.warn("connection lost ! connectionErrorCounter:" + this.solaredge.connectionErrorCounter);
+                    }
                     await this.setInfoConnectionState(false);
                     if (this.solaredge.connectionErrorCounter > 10) {
                         this.restart();
@@ -120,46 +170,42 @@ class SolaredgeModbus extends utils.Adapter {
                 }
                 else {
                     this.solaredge.connectionErrorCounter = 0;
-                    this.log.debug("setInfoConnectionState: true - connection ok");
                     await this.setInfoConnectionState(true);
                 }
             }
             else {
-                this.log.warn("setInfoConnectionState: false - connection lost ! - this.solaredge == null");
+                this.log.warn("connection lost ! - this.solaredge == null");
                 await this.setInfoConnectionState(false);
                 this.restart();
             }
         }, 5000);
     }
     async sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => {
+            this.mainLoopSleepResolve = resolve;
+            this.mainLoopSleepTimeout = setTimeout(() => {
+                this.mainLoopSleepTimeout = undefined;
+                this.mainLoopSleepResolve = undefined;
+                resolve();
+            }, ms);
+        });
     }
     async updateStates() {
-        try {
-            if (this.solaredge) {
-                await this.solaredge.readAndWrite(this.config);
-                // await this.setInfoConnectionState(true);
-                for (const [key, value] of Object.entries(this.solaredge.SolaredgeData)) {
-                    const v = value;
-                    if (v.value !== v.valueOld) {
-                        // this.log.debug("key     : " + key)
-                        // this.log.debug("value   : " + v.value)
-                        // this.log.debug("valueOld: " + v.valueOld)
-                        this.log.debug("setState: " + key + " : " + v.value);
-                        await this.setStateAsync(key, {
-                            val: v.value,
-                            ack: true
-                        });
-                    }
-                }
-            }
+        if (!this.solaredge) {
+            return;
         }
-        catch (Exception) {
-            // await this.setInfoConnectionState(false);
-            if (this.solaredge) {
-                this.solaredge.lastConnectedTimestamp = 0;
+        // Errors are handled (and throttled) by mainLoop, so they carry a real
+        // message instead of "ERROR - {}".
+        await this.solaredge.readAndWrite(this.config);
+        for (const [key, value] of Object.entries(this.solaredge.SolaredgeData)) {
+            const v = value;
+            if (v.value !== v.valueOld) {
+                this.log.debug("setState: " + key + " : " + v.value);
+                await this.setStateAsync(key, {
+                    val: v.value,
+                    ack: true
+                });
             }
-            this.log.error("ERROR - " + JSON.stringify(Exception));
         }
     }
     /**
@@ -178,7 +224,6 @@ class SolaredgeModbus extends utils.Adapter {
                         value: state.val,
                     });
                     (_b = this.solaredge) === null || _b === void 0 ? void 0 : _b.sendHoldingRegisterQueue.push(queueEntry);
-                    // await this.solaredge?.writeHoldingRegister(this.config);
                 }
             }
             else {
@@ -205,7 +250,12 @@ class SolaredgeModbus extends utils.Adapter {
             native: {},
         });
     }
+    /** Writes info.connection only on changes, not on every watchdog tick. */
     async setInfoConnectionState(state) {
+        if (this.infoConnectionState === state) {
+            return;
+        }
+        this.infoConnectionState = state;
         await this.setStateAsync("info.connection", state, true);
     }
 }
