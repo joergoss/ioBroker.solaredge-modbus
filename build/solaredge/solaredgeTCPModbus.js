@@ -31,6 +31,8 @@ class SolaredgeTCPModbus {
     constructor(log) {
         this.bufferSize = 0xFFFF;
         this.buf = Buffer.alloc(this.bufferSize * 2);
+        /** When enabled, every polled block is logged as raw hex for bug reports. */
+        this.logRawRegisters = false;
         this.SolaredgeData = new solaredgeModel_1.SolaredgeModel();
         this.sendHoldingRegisterQueue = [];
         this.sendCoilQueue = [];
@@ -59,6 +61,7 @@ class SolaredgeTCPModbus {
     }
     async readAndWrite(adapterConfig) {
         const config = (0, connectionPolicy_1.withConnectionDefaults)(adapterConfig);
+        this.logRawRegisters = adapterConfig.log_raw_registers === true;
         await this.connect(config, async (client) => {
             while (this.sendHoldingRegisterQueue.length > 0) {
                 const item = this.sendHoldingRegisterQueue.pop();
@@ -89,6 +92,11 @@ class SolaredgeTCPModbus {
         const block = await client.readHoldingRegisters(start, end);
         const b = Buffer.from(block.response._body._valuesAsBuffer);
         b.copy(this.buf, start * 2);
+        if (this.logRawRegisters) {
+            // One copyable line per block: register range plus the exact bytes as
+            // they arrived. Users can paste this into a bug report (issues #4/#5).
+            this.log.info(`raw registers 0x${start.toString(16)}..0x${(start + end - 1).toString(16)} (${end} registers): ${b.toString("hex")}`);
+        }
     }
     /**
      * Closes an open connection. Safe to call repeatedly and from onUnload.

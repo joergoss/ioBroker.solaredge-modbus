@@ -305,7 +305,8 @@
         "unitId": 1,
         "com_wait_pause": 200,
         "main_loop_pause": 1000,
-        "connection_timeout": 5000
+        "connection_timeout": 5000,
+        "log_raw_registers": false
     },
     "objects": [],
     "instanceObjects": []
