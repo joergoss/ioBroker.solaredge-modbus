@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: ioBroker/testing-action-check@v1
         with:
-          node-version: '20.x'
+          node-version: '22.x'
           # Uncomment the following line if your adapter cannot be installed using 'npm ci'
           # install-command: 'npm install'
           type-checking: true
@@ -39,8 +39,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # Node 12/14/16 are end of life; 20 and 22 are the supported LTS lines.
-        node-version: [20.x, 22.x]
+        # Node 12/14/16 are end of life. @iobroker/testing 6 requires node >= 22.19
+        # and installs the current js-controller, which needs >= 22.22.2 itself.
+        node-version: [22.x, 24.x]
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
