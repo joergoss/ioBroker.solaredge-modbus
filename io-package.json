@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "solaredge-modbus",
-        "version": "0.4.1",
+        "version": "0.4.2",
         "news": {
+            "0.4.2": {
+                "en": "fix remote_control_command_timeout word order (uint32sw) for read and write - a 3600 s timeout was shown as 235929600\nfull audit against official SolarEdge documents: all 41 inverter registers match technical note 3.3, meter map without type deviations",
+                "de": "Fix: remote_control_command_timeout mit korrekter Wortreihenfolge (uint32sw) beim Lesen und Schreiben - ein 3600-s-Timeout wurde als 235929600 angezeigt\nKompletter Abgleich mit den offiziellen SolarEdge-Dokumenten: alle 41 Inverter-Register stimmen mit Technical Note 3.3 ueberein, Meter-Map ohne Typabweichungen"
+            },
             "0.4.1": {
                 "en": "fix: write every state once after the first poll, including values that are 0 from the start (they stayed empty before)",
                 "de": "Fix: nach dem ersten Abfragezyklus alle Datenpunkte einmal schreiben, auch wenn sie von Anfang an 0 sind (blieben bisher leer)"
@@ -174,18 +178,6 @@
                 "es": "agregue mensajes de registro de depuración y advertencia de pérdida de conexión",
                 "pl": "dodaj komunikaty dziennika debugowania i ostrzeżenie o utracie połączenia",
                 "zh-cn": "添加调试日志消息和连接丢失警告"
-            },
-            "0.0.13": {
-                "en": "add connection watchdog",
-                "de": "Verbindungsüberwachung hinzufügen",
-                "ru": "добавить сторожевой таймер соединения",
-                "pt": "adicionar watchdog de conexão",
-                "nl": "verbindingswaakhond toevoegen",
-                "fr": "ajouter un chien de garde de connexion",
-                "it": "aggiungi watchdog di connessione",
-                "es": "añadir vigilancia de conexión",
-                "pl": "dodaj strażnika połączenia",
-                "zh-cn": "添加连接看门狗"
             }
         },
         "title": "solaredge-modbus",

@@ -153,6 +153,10 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.4.2 (2026-11-21)
+* (joergoss) fix remote_control_command_timeout word order (uint32sw) for read and write - a 3600 s timeout was shown as 235929600 (found via the official Power Control Open Protocol document)
+* (joergoss) full audit against official SolarEdge documents: all 41 inverter registers match technical note 3.3, meter map without type deviations
+
 ### 0.4.1 (2026-11-21)
 * (joergoss) fix: write every state once after the first poll, including values that are 0 from the start - such states stayed empty before (found on the live system)
 
