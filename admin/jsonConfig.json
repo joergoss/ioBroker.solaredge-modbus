@@ -99,7 +99,11 @@
             "label": "autoDetect",
             "help": "autoDetectHelp",
             "newLine": true,
-            "xs": 12
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 12,
+            "xl": 12
         },
         "redetect_interval_minutes": {
             "type": "number",
@@ -155,14 +159,22 @@
             "label": "readPowerControl",
             "help": "readPowerControlHelp",
             "newLine": true,
-            "xs": 12
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 12,
+            "xl": 12
         },
         "read_export_control": {
             "type": "checkbox",
             "label": "readExportControl",
             "help": "readExportControlHelp",
             "newLine": true,
-            "xs": 12
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 12,
+            "xl": 12
         },
         "_diagnosticsHeader": {
             "type": "header",
@@ -189,7 +201,11 @@
             "label": "logRawRegisters",
             "help": "logRawRegistersHelp",
             "newLine": true,
-            "xs": 12
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 12,
+            "xl": 12
         }
     }
 }

@@ -2,7 +2,7 @@ name: Test and Release
 
 # Cancel superseded runs on the same ref instead of piling them up
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.ref }}
   cancel-in-progress: true
 
 # Run this job on all pushes and pull requests
@@ -12,8 +12,7 @@ on:
     branches:
       # The default branch of this repository is "master". The workflow used to
       # listen on "main" only, so it never ran for a single push.
-      - "master"
-      - "main"
+      - "*"
     tags:
       # normal versions
       - "v[0-9]+.[0-9]+.[0-9]+"
@@ -62,18 +61,18 @@ jobs:
 # Disabled until you opt in: set the repository variable NPM_DEPLOY_ENABLED=true
 # (Settings -> Secrets and variables -> Actions -> Variables) after creating the
 # NPM_TOKEN secret. Nothing fails on tags while it is switched off.
-deploy:
-  needs: [check-and-lint, adapter-tests]
-  if: |
-    vars.NPM_DEPLOY_ENABLED == 'true' &&
-    contains(github.event.head_commit.message, '[skip ci]') == false &&
-    github.event_name == 'push' &&
-    startsWith(github.ref, 'refs/tags/v')
-  runs-on: ubuntu-latest
-  steps:
-    - uses: ioBroker/testing-action-deploy@v1
-      with:
-        node-version: '22.x'
-        build: true
-        npm-token: ${{ secrets.NPM_TOKEN }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+  deploy:
+    needs: [check-and-lint, adapter-tests]
+    if: |
+      vars.NPM_DEPLOY_ENABLED == 'true' &&
+      contains(github.event.head_commit.message, '[skip ci]') == false &&
+      github.event_name == 'push' &&
+      startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ioBroker/testing-action-deploy@v1
+        with:
+          node-version: '22.x'
+          build: true
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -22,162 +22,6 @@
             "0.2.0": {
                 "en": "battery status text mapping incl. 10 = Power Saving (#11)\noptional export control block 0xF700 (#12)\nperiodic re-detection of meters/batteries (redetect_interval_minutes)\ndocument that BYD/LG lifetime counters are unreliable at the source (#10)",
                 "de": "Batterie-Status als Klartext, inkl. 10 = Power Saving (#11)\noptionaler Export-Control-Block 0xF700 (#12)\nperiodische Wieder-Erkennung von Metern/Batterien (redetect_interval_minutes)\nDokumentiert: BYD/LG-Lifetime-Zaehler sind an der Quelle unzuverlaessig (#10)"
-            },
-            "0.1.1": {
-                "en": "fix: do not write states for meters/batteries that are not configured or detected (caused \"no existing object\" warnings)",
-                "de": "Fix: keine States fuer nicht konfigurierte oder nicht erkannte Meter/Batterien schreiben (verursachte \"no existing object\"-Warnungen)"
-            },
-            "0.1.0": {
-                "en": "fix battery 64 bit counters and battery status word order (#4)\nnew: meter 1-3 and battery 1-2, power control block, optional auto detection of meters and batteries\npersistent modbus session with per-request timeouts and block level fault tolerance (#13)\ncontrol writes are FIFO now; invalid values (Infinity/NaN/not implemented) become null; meaningful state roles\nnew diagnostics: raw register logging, offline capture decoding",
-                "de": "Batterie: 64-Bit-Zaehler und Status mit korrekter Wortreihenfolge (#4)\nNeu: Meter 1-3 und Batterie 1-2, Power-Control-Block, optionale Auto-Erkennung von Metern und Batterien\nPersistente Modbus-Verbindung mit Timeout pro Anfrage und fehlertoleranten Bloecken (#13)\nSteuerbefehle jetzt FIFO; ungueltige Werte (Infinity/NaN/nicht implementiert) werden null; sinnvolle Datenpunkt-Rollen\nNeue Diagnose: Rohregister-Logging und Offline-Auswertung von Aufzeichnungen"
-            },
-            "0.0.26": {
-                "en": "fix ac.I_AC_Energy_WH signed scale factor (#1)\nfix adapter lifecycle and socket cleanup, calmed connection error logging and backoff (#2)\nvalidate configuration before connecting; new defaults for port, unitId and connection timeout\nmaintenance: working CI on node 22/24, updated test tooling, register level unit tests",
-                "de": "ac.I_AC_Energy_WH: Skalierungsfaktor jetzt vorzeichenbehaftet gelesen (#1)\nAdapter-Lebenszyklus und Socket-Aufraeumarbeiten korrigiert, Fehler-Logging beruhigt, Backoff (#2)\nKonfiguration wird vor dem Verbindungsaufbau geprueft; neue Standardwerte fuer Port, unitId und Verbindungs-Timeout\nPflege: funktionierende CI auf Node 22/24, aktualisierte Test-Werkzeuge, Unit-Tests auf Register-Ebene"
-            },
-            "0.0.25": {
-                "en": "fix I_AC_Energy_WH scaling factor\nadd connection_timout parameter",
-                "de": "fix I_AC_Energy_WH Skalierungsfaktor\nverbindungs_timout parameter",
-                "ru": "исправить I_AC_Energy_WH фактор масштабирования\nдобавить параметр connect_timout",
-                "pt": "corrigir o fator de dimensionamento I_AC_Energy_WH\nadicionar parâmetro connection_timout",
-                "nl": "vertaling:\nvoeg connectie parameter toe",
-                "fr": "correction du facteur d'échelle I_AC_Energy_WH\najouter le paramètre connection_timout",
-                "it": "fix I_AC_Energy_WH fattore di scaling\naggiungere il parametro connection_timout",
-                "es": "fijar el factor de escalado I_AC_Energy_WH\nañadir connection_timout parámetro",
-                "pl": "i_AC_Energy_WH (ang.)\ndodaje parametr połączenia_timout",
-                "zh-cn": "fix I_AC_Energy_WH扩大因素\n增加联系"
-            },
-            "0.0.24": {
-                "en": "debug code removed",
-                "de": "Debug-Code entfernt",
-                "ru": "отладочный код удален",
-                "pt": "código de depuração removido",
-                "nl": "debug-code verwijderd",
-                "fr": "code de débogage supprimé",
-                "it": "codice di debug rimosso",
-                "es": "código de depuración eliminado",
-                "pl": "usunięto kod debugowania",
-                "zh-cn": "调试代码已删除"
-            },
-            "0.0.23": {
-                "en": "debug code removed",
-                "de": "Debug-Code entfernt",
-                "ru": "отладочный код удален",
-                "pt": "código de depuração removido",
-                "nl": "debug-code verwijderd",
-                "fr": "code de débogage supprimé",
-                "it": "codice di debug rimosso",
-                "es": "código de depuración eliminado",
-                "pl": "usunięto kod debugowania",
-                "zh-cn": "调试代码已删除"
-            },
-            "0.0.22": {
-                "en": "fix dc.I_DC_Power unit -> int build",
-                "de": "fix dc.I_DC_Power unit -> int build",
-                "ru": "исправить dc.I_DC_Power unit -> int build",
-                "pt": "fix dc.I_DC_Power unit -> int build",
-                "nl": "fix dc.I_DC_Power unit -> int build",
-                "fr": "correction de l'unité dc.I_DC_Power -> int build",
-                "it": "fix dc.I_DC_Power unit -> int build",
-                "es": "corrige la unidad dc.I_DC_Power -> int build",
-                "pl": "napraw dc.I_DC_Power unit -> int build",
-                "zh-cn": "修复 dc.I_DC_Power unit -> int build"
-            },
-            "0.0.21": {
-                "en": "fix dc.I_DC_Power unit -> int",
-                "de": "fix dc.I_DC_Power unit -> int",
-                "ru": "исправить dc.I_DC_Power unit -> int",
-                "pt": "fix dc.I_DC_Power unit -> int",
-                "nl": "fix dc.I_DC_Power unit -> int",
-                "fr": "correction de l'unité dc.I_DC_Power -> int",
-                "it": "fix dc.I_DC_Power unit -> int",
-                "es": "arreglar unidad dc.I_DC_Power -> int",
-                "pl": "napraw dc.I_DC_Power unit -> int",
-                "zh-cn": "修复 dc.I_DC_Power unit -> int"
-            },
-            "0.0.20": {
-                "en": "using adapterConfig for com_wait_pause",
-                "de": "Verwenden von adapterConfig für com_wait_pause",
-                "ru": "использование adapterConfig для com_wait_pause",
-                "pt": "usando adapterConfig para com_wait_pause",
-                "nl": "met adapterConfig voor com_wait_pause",
-                "fr": "en utilisant adapterConfig pour com_wait_pause",
-                "it": "usando adapterConfig per com_wait_pause",
-                "es": "usando adapterConfig para com_wait_pause",
-                "pl": "używanie adapterConfig dla com_wait_pause",
-                "zh-cn": "对 com_wait_pause 使用 adapterConfig"
-            },
-            "0.0.19": {
-                "en": "add com_wait_pause config\nadd main_loop_pause config",
-                "de": "com_wait_pause config hinzufügen\nmain_loop_pause config hinzufügen",
-                "ru": "добавить конфиг com_wait_pause\nдобавить конфиг main_loop_pause",
-                "pt": "adicionar configuração com_wait_pause\nadicionar configuração main_loop_pause",
-                "nl": "com_wait_pause config toevoegen\nvoeg main_loop_pause config toe",
-                "fr": "ajouter la configuration com_wait_pause\najouter la configuration main_loop_pause",
-                "it": "aggiungi com_wait_pause config\naggiungi main_loop_pause config",
-                "es": "agregar configuración com_wait_pause\nagregar configuración main_loop_pause",
-                "pl": "dodaj konfigurację com_wait_pause\ndodaj konfigurację main_loop_pause",
-                "zh-cn": "添加 com_wait_pause 配置\n添加 main_loop_pause 配置"
-            },
-            "0.0.18": {
-                "en": "com_wait_pause = 100 // ms",
-                "de": "com_wait_pause = 100 // ms",
-                "ru": "com_wait_pause = 100 // мс",
-                "pt": "com_wait_pause = 100 // ms",
-                "nl": "com_wait_pause = 100 // ms",
-                "fr": "com_wait_pause = 100 // ms",
-                "it": "com_wait_pause = 100 // ms",
-                "es": "com_wait_pause = 100 // ms",
-                "pl": "com_wait_pause = 100 // ms",
-                "zh-cn": "com_wait_pause = 100 // 毫秒"
-            },
-            "0.0.17": {
-                "en": "com_wait_pause = 50 // ms",
-                "de": "com_wait_pause = 50 // ms",
-                "ru": "com_wait_pause = 50 // мс",
-                "pt": "com_wait_pause = 50 // ms",
-                "nl": "com_wait_pause = 50 // ms",
-                "fr": "com_wait_pause = 50 // ms",
-                "it": "com_wait_pause = 50 // ms",
-                "es": "com_wait_pause = 50 // ms",
-                "pl": "com_wait_pause = 50 // ms",
-                "zh-cn": "com_wait_pause = 50 // 毫秒"
-            },
-            "0.0.16": {
-                "en": "edit connection error handling\nadd timout\nreactivate restart after 10 watchdog cycles",
-                "de": "Behandlung von Verbindungsfehlern bearbeiten\nZeitüberschreitung hinzufügen\nNeustart nach 10 Watchdog-Zyklen wieder aktivieren",
-                "ru": "изменить обработку ошибок подключения\nдобавить тайм-аут\nповторно активировать перезапуск после 10 циклов сторожевого таймера",
-                "pt": "editar tratamento de erros de conexão\nadicionar tempo limite\nreativar a reinicialização após 10 ciclos de watchdog",
-                "nl": "bewerking verbinding foutafhandeling\ntime-out toevoegen\nherstart herstart na 10 watchdog-cycli",
-                "fr": "modifier la gestion des erreurs de connexion\najouter un délai\nréactiver le redémarrage après 10 cycles de chien de garde",
-                "it": "modificare la gestione degli errori di connessione\naggiungi timeout\nriattivare il riavvio dopo 10 cicli di watchdog",
-                "es": "editar el manejo de errores de conexión\nañadir tiempo de espera\nreactivar el reinicio después de 10 ciclos de vigilancia",
-                "pl": "edytuj obsługę błędów połączenia\ndodaj limit czasu\nreaktywuj restart po 10 cyklach watchdoga",
-                "zh-cn": "编辑连接错误处理\n添加超时\n10 个看门狗周期后重新激活重启"
-            },
-            "0.0.15": {
-                "en": "add connection fail counter\nrestart adapter",
-                "de": "Zähler für Verbindungsfehler hinzufügen\nAdapter neu starten",
-                "ru": "добавить счетчик неудачных подключений\nперезапустить адаптер",
-                "pt": "adicionar contador de falhas de conexão\nreinicie o adaptador",
-                "nl": "teller voor mislukte verbinding toevoegen\nherstart adapter",
-                "fr": "ajouter un compteur d'échec de connexion\nredémarrer l'adaptateur",
-                "it": "aggiungi contatore di errori di connessione\nriavviare l'adattatore",
-                "es": "agregar contador de fallas de conexión\nadaptador de reinicio",
-                "pl": "dodaj licznik błędów połączenia\nuruchom ponownie adapter",
-                "zh-cn": "添加连接失败计数器\n重启适配器"
-            },
-            "0.0.14": {
-                "en": "add debug log messages and connection lost warning",
-                "de": "Fügen Sie Debug-Protokollmeldungen und eine Warnung zum Verbindungsverlust hinzu",
-                "ru": "добавить сообщения журнала отладки и предупреждение о потере соединения",
-                "pt": "adicionar mensagens de log de depuração e aviso de perda de conexão",
-                "nl": "voeg foutopsporingslogberichten en verbinding verbroken waarschuwing toe",
-                "fr": "ajouter des messages de journal de débogage et un avertissement de perte de connexion",
-                "it": "aggiungi messaggi di registro di debug e avviso di connessione persa",
-                "es": "agregue mensajes de registro de depuración y advertencia de pérdida de conexión",
-                "pl": "dodaj komunikaty dziennika debugowania i ostrzeżenie o utracie połączenia",
-                "zh-cn": "添加调试日志消息和连接丢失警告"
             }
         },
         "titleLang": {
@@ -190,7 +34,8 @@
             "it": "solaredge-modbus",
             "es": "solaredge-modbus",
             "pl": "solaredge-modbus",
-            "zh-cn": "solaredge-modbus"
+            "zh-cn": "solaredge-modbus",
+            "uk": "solaredge-modbus"
         },
         "desc": {
             "en": "solaredge-modbus adapter",
@@ -202,7 +47,8 @@
             "it": "adattatore solaredge-modbus",
             "es": "adaptador solaredge-modbus",
             "pl": "adapter solaredge-modbus",
-            "zh-cn": "solaredge-modbus 适配器"
+            "zh-cn": "solaredge-modbus 适配器",
+            "uk": "Отримання даних з інвертора SolarEdge через Modbus TCP"
         },
         "authors": [
             "joergoss <joerg.oss@gmx.de>"
@@ -236,7 +82,7 @@
         },
         "globalDependencies": [
             {
-                "admin": ">=7.6.17"
+                "admin": ">=7.6.20"
             }
         ]
     },
