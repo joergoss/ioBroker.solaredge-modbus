@@ -345,8 +345,8 @@ class SolaredgeModbus extends utils.Adapter {
 				// The state was deleted
 				this.log.debug(`state ${id} deleted`);
 			}
-		} catch (Exception) {
-			this.log.error("onStateChange" + JSON.stringify(Exception))
+		} catch (e) {
+			this.log.error("onStateChange: " + formatError(e))
 		}
 	}
 

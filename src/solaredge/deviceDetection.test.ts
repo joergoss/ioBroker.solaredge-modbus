@@ -14,6 +14,8 @@ import {
 	readMeterIdentity,
 } from "./deviceDetection";
 import capture from "./realDeviceIdentification.json";
+import batteryCapture from "./realBatteryCapture.json";
+import { SolaredgeModel } from "./solaredgeModel";
 
 describe("deviceDetection with real identification blocks", () => {
 	const buf = bufferFromCapture(capture as { blocks: Record<string, { start: number; hex: string }> });
@@ -55,6 +57,25 @@ describe("deviceDetection with real identification blocks", () => {
 		expect(identity.sunspecDid).to.equal(203);
 
 		expect(evaluateMeter(identity).present).to.be.true;
+	});
+
+	it("exposes the full meter identification as states", () => {
+		const model = new SolaredgeModel();
+		expect(model["meter.1.C_Option"].readRegister!(buf)).to.equal("Export+Import");
+		expect(model["meter.1.C_Version"].readRegister!(buf)).to.equal("79");
+		expect(model["meter.1.C_DeviceAddress"].readRegister!(buf)).to.equal(2);
+		expect(model["meter.1.C_SunSpec_DID"].readRegister!(buf)).to.equal(203);
+		// 105 registers is exactly the SunSpec model 203 block length
+		expect(model["meter.1.C_SunSpec_Length"].readRegister!(buf)).to.equal(105);
+		expect(model["meter.1.C_SerialNumber"].readRegister!(buf)).to.match(/^PSEUDO-/);
+	});
+
+	it("exposes battery sunspec did and event logs", () => {
+		const model = new SolaredgeModel();
+		expect(model["battery.sunspec_did"].readRegister!(buf)).to.equal(0);
+		const batteryBuf = bufferFromCapture(batteryCapture as { blocks: Record<string, { start: number; hex: string }> });
+		expect(model["battery.event_log"].readRegister!(batteryBuf)).to.equal(0);
+		expect(model["battery.event_log_internal"].readRegister!(batteryBuf)).to.equal(0);
 	});
 
 	it("rejects meters 2 and 3 which contain garbage", () => {

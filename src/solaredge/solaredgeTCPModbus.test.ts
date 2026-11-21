@@ -15,6 +15,8 @@ class TestModbusServer {
 	server: net.Server;
 	connections = 0;
 	requests: Array<{ start: number; length: number }> = [];
+	/** recorded write multiple registers (0x10) calls, in arrival order */
+	writes: Array<{ start: number; count: number; hex: string }> = [];
 	/** behaviour per start address, everything else answers normally */
 	behaviour = new Map<number, ServerMode>();
 	/** optional real captured payload per start address (identification blocks) */
@@ -35,8 +37,21 @@ class TestModbusServer {
 					rx = rx.subarray(total);
 					const tid = frame.readUInt16BE(0);
 					const unit = frame.readUInt8(6);
+					const fn = frame.readUInt8(7);
 					const start = frame.readUInt16BE(8);
 					const count = frame.readUInt16BE(10);
+					if (fn === 0x10) {
+						// write multiple registers: record and acknowledge
+						const byteCount = frame.readUInt8(12);
+						const data = frame.subarray(13, 13 + byteCount);
+						this.writes.push({ start, count, hex: data.toString("hex") });
+						const pdu = Buffer.alloc(5);
+						pdu.writeUInt8(0x10, 0);
+						pdu.writeUInt16BE(start, 1);
+						pdu.writeUInt16BE(count, 3);
+						socket.write(this.frame(tid, unit, pdu));
+						continue;
+					}
 					this.requests.push({ start, length: count });
 					const mode = this.behaviour.get(start) ?? "normal";
 					if (mode === "silent") {
@@ -176,6 +191,22 @@ describe("SolaredgeTCPModbus persistent connection (issue #13)", () => {
 		await adapter.readAndWrite(config(server.port));
 		expect(server.connections).to.equal(2);
 		expect(adapter.isConnected()).to.be.true;
+	});
+
+	it("writes queued control commands in FIFO order with the right bytes", async () => {
+		// the queue used pop() (LIFO) before, which reordered control commands
+		adapter.sendHoldingRegisterQueue.push({ register: 0xE004, value: Buffer.from([0x00, 0x01]) });
+		adapter.sendHoldingRegisterQueue.push({ register: 0xE005, value: Buffer.from([0x00, 0x02]) });
+		adapter.sendHoldingRegisterQueue.push({ register: 0xE006, value: Buffer.from([0x00, 0x03]) });
+
+		await adapter.readAndWrite(config(server.port));
+
+		expect(server.writes.map(w => w.start)).to.deep.equal([0xE004, 0xE005, 0xE006]);
+		expect(server.writes.map(w => w.hex)).to.deep.equal(["0001", "0002", "0003"]);
+		expect(adapter.sendHoldingRegisterQueue).to.have.length(0);
+		// the read cycle still happened afterwards on the same session
+		expect(server.connections).to.equal(1);
+		expect(server.requests.some(r => r.start === 0)).to.be.true;
 	});
 
 	it("auto detection finds only populated slots and polls just those", async () => {

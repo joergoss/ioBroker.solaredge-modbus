@@ -276,23 +276,23 @@ export function writeValue(type: string, value: number | string): Buffer | undef
                 break;
             case "uint64be":
                 buffer = Buffer.alloc(8);
-                buffer.writeUInt32BE(value >> 32, 0);
+                buffer.writeUInt32BE(Math.floor(value / 0x100000000), 0);
                 buffer.writeUInt32BE(value & 0xFFFFFFFF, 4);
                 break;
             case "uint64le":
                 buffer = Buffer.alloc(8);
                 buffer.writeUInt32LE(value & 0xFFFFFFFF, 0);
-                buffer.writeUInt32LE(value >> 32, 4);
+                buffer.writeUInt32LE(Math.floor(value / 0x100000000), 4);
                 break;
             case "int64be":
                 buffer = Buffer.alloc(8);
-                buffer.writeInt32BE(value >> 32, 0);
+                buffer.writeInt32BE(Math.floor(value / 0x100000000), 0);
                 buffer.writeUInt32BE(value & 0xFFFFFFFF, 4);
                 break;
             case "int64le":
                 buffer = Buffer.alloc(8);
                 buffer.writeUInt32LE(value & 0xFFFFFFFF, 0);
-                buffer.writeInt32LE(value >> 32, 4);
+                buffer.writeInt32LE(Math.floor(value / 0x100000000), 4);
                 break;
             case "floatbe":
                 buffer = Buffer.alloc(4);

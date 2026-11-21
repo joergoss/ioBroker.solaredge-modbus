@@ -55,8 +55,16 @@ export const METER_BASE_ADDRESSES = [40123, 40123 + 0xae, 40123 + 0x15c];
 export const BATTERY_BASE_ADDRESSES = [0xE100, 0xE100 + 0x100];
 
 export const METER_SPECS: RegisterSpec[] = [
-	{ name: "C_Manufacturer", descr: "Meter manufacturer", unit: "", type: "string", len: 32, offset: 0 },
-	{ name: "C_Model", descr: "Meter model", unit: "", type: "string", len: 32, offset: 16 },
+	// Identification registers, cross checked against nmakel/solaredge_modbus.
+	// All of them live inside the block that is polled anyway.
+	{ name: "C_Manufacturer", descr: "Meter manufacturer", unit: "", type: "string", len: 16, offset: 0 },
+	{ name: "C_Model", descr: "Meter model", unit: "", type: "string", len: 16, offset: 16 },
+	{ name: "C_Option", descr: "Meter option (e.g. Export+Import)", unit: "", type: "string", len: 8, offset: 32 },
+	{ name: "C_Version", descr: "Meter firmware version", unit: "", type: "string", len: 8, offset: 40 },
+	{ name: "C_SerialNumber", descr: "Meter serial number", unit: "", type: "string", len: 16, offset: 48 },
+	{ name: "C_DeviceAddress", descr: "Meter modbus address", unit: "", type: "uint16be", len: 1, offset: 64 },
+	{ name: "C_SunSpec_DID", descr: "Meter SunSpec model id (201-204)", unit: "", type: "uint16be", len: 1, offset: 65 },
+	{ name: "C_SunSpec_Length", descr: "Meter SunSpec block length", unit: "", type: "uint16be", len: 1, offset: 66 },
 	{ name: "M_AC_Current", descr: "AC Current (sum of active phases)", unit: "A", type: "int16be", len: 1, offset: 67, scaleFactorOffset: 71 },
 	{ name: "M_AC_Current_A", descr: "Phase A AC Current", unit: "A", type: "int16be", len: 1, offset: 68, scaleFactorOffset: 71 },
 	{ name: "M_AC_Current_B", descr: "Phase B AC Current", unit: "A", type: "int16be", len: 1, offset: 69, scaleFactorOffset: 71 },
@@ -111,6 +119,7 @@ export const BATTERY_SPECS: RegisterSpec[] = [
 	{ name: "firmware_version", descr: "Battery 1 Firmware Version", unit: "", type: "string", len: 16, offset: 32 },
 	{ name: "serial_number", descr: "Battery 1 Serial Number", unit: "", type: "string", len: 16, offset: 48 },
 	{ name: "device_id", descr: "Battery 1 Device ID", unit: "", type: "uint16be", len: 1, offset: 64 },
+	{ name: "sunspec_did", descr: "Battery 1 SunSpec model id", unit: "", type: "uint16be", len: 1, offset: 65 },
 	{ name: "rated_energy", descr: "Battery 1 Rated Energy", unit: "Wh", type: "floatsw", len: 2, offset: 66 },
 	{ name: "charge_continues_power", descr: "Battery 1 Max Charge Continues Power", unit: "W", type: "floatsw", len: 2, offset: 68 },
 	{ name: "discharge_continues_power", descr: "Battery 1 Max Discharge Continues Power", unit: "W", type: "floatsw", len: 2, offset: 70 },
@@ -133,4 +142,8 @@ export const BATTERY_SPECS: RegisterSpec[] = [
 	// 10, not 655360 - the battery block needs word swap here too (issue #4).
 	{ name: "status", descr: "Battery 1 Status", unit: "", type: "uint32sw", len: 2, offset: 134, states: BATTERY_STATUS_STATES },
 	{ name: "status_internal", descr: "Battery 1 Status Internal", unit: "", type: "uint32sw", len: 2, offset: 136 },
+	// Battery event logs, inside the second battery block that is polled anyway.
+	// Word swap like the rest of the battery block (multi register values).
+	{ name: "event_log", descr: "Battery 1 Event Log (bitfield)", unit: "", type: "uint32sw", len: 2, offset: 138 },
+	{ name: "event_log_internal", descr: "Battery 1 Internal Event Log (bitfield)", unit: "", type: "uint32sw", len: 2, offset: 146 },
 ];
