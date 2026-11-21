@@ -30,6 +30,8 @@ class SolaredgeModbus extends utils.Adapter {
 	private consecutiveErrors = 0
 	private configProblem: string | null = null
 	private infoConnectionState: boolean | undefined
+	/** First successful poll writes every state once, including zero values. */
+	private statesInitialized = false
 	/** Result of the optional startup auto detection (issue: device detection). */
 	private detectedDevices?: DetectedDevices
 	private redetectInterval?: NodeJS.Timeout
@@ -309,7 +311,9 @@ class SolaredgeModbus extends utils.Adapter {
 				continue
 			}
 			const v = value as SolaredgeDataEntry;
-			if (v.value !== v.valueOld) {
+			// The value/valueOld comparison alone never wrote a state whose value
+			// is 0 from the start (0 === 0), so such states stayed empty forever.
+			if (!this.statesInitialized || v.value !== v.valueOld) {
 				this.log.debug("setState: " + key +" : " + v.value)
 
 				await this.setStateAsync(key, {
@@ -318,6 +322,7 @@ class SolaredgeModbus extends utils.Adapter {
 				});
 			}
 		}
+		this.statesInitialized = true
 	}
 
 

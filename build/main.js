@@ -51,6 +51,8 @@ class SolaredgeModbus extends utils.Adapter {
         this.mainLoopRunning = true;
         this.consecutiveErrors = 0;
         this.configProblem = null;
+        /** First successful poll writes every state once, including zero values. */
+        this.statesInitialized = false;
         this.on("ready", this.onReady.bind(this));
         this.on("stateChange", this.onStateChange.bind(this));
         this.on("unload", this.onUnload.bind(this));
@@ -303,7 +305,9 @@ class SolaredgeModbus extends utils.Adapter {
                 continue;
             }
             const v = value;
-            if (v.value !== v.valueOld) {
+            // The value/valueOld comparison alone never wrote a state whose value
+            // is 0 from the start (0 === 0), so such states stayed empty forever.
+            if (!this.statesInitialized || v.value !== v.valueOld) {
                 this.log.debug("setState: " + key + " : " + v.value);
                 await this.setStateAsync(key, {
                     val: v.value,
@@ -311,6 +315,7 @@ class SolaredgeModbus extends utils.Adapter {
                 });
             }
         }
+        this.statesInitialized = true;
     }
     /**
      * Is called if a subscribed state changes

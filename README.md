@@ -153,6 +153,9 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.4.1 (2026-11-21)
+* (joergoss) fix: write every state once after the first poll, including values that are 0 from the start - such states stayed empty before (found on the live system)
+
 ### 0.4.0 (2026-11-21)
 * (joergoss) deep audit: every meter and battery register cross checked address by address against an independent implementation
 * (joergoss) new states: full meter identification (option, version, serial number, address, SunSpec DID and block length), battery SunSpec DID and event logs - all within blocks that are polled anyway
