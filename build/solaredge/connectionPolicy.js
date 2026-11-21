@@ -6,7 +6,12 @@
  * tested without an inverter (see connectionPolicy.test.ts).
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.formatError = exports.shouldLogConnectionError = exports.backoffDelayMs = exports.withConnectionDefaults = exports.validateConnectionConfig = exports.INVALID_CONFIG_RETRY_MS = exports.MAX_BACKOFF_MS = exports.CONNECTION_DEFAULTS = void 0;
+exports.INVALID_CONFIG_RETRY_MS = exports.MAX_BACKOFF_MS = exports.CONNECTION_DEFAULTS = void 0;
+exports.validateConnectionConfig = validateConnectionConfig;
+exports.withConnectionDefaults = withConnectionDefaults;
+exports.backoffDelayMs = backoffDelayMs;
+exports.shouldLogConnectionError = shouldLogConnectionError;
+exports.formatError = formatError;
 /** Fallbacks for instances created before these settings had defaults. */
 exports.CONNECTION_DEFAULTS = {
     port: 1502,
@@ -36,7 +41,6 @@ function validateConnectionConfig(config) {
     }
     return null;
 }
-exports.validateConnectionConfig = validateConnectionConfig;
 /** Applies the defaults for timing settings that an old instance may not have. */
 function withConnectionDefaults(config) {
     var _a, _b, _c, _d, _e;
@@ -49,7 +53,6 @@ function withConnectionDefaults(config) {
         connection_timeout: (_e = config.connection_timeout) !== null && _e !== void 0 ? _e : exports.CONNECTION_DEFAULTS.connection_timeout,
     };
 }
-exports.withConnectionDefaults = withConnectionDefaults;
 /**
  * Delay before the next poll after a failure: base pause doubled per error,
  * capped at MAX_BACKOFF_MS. The inverter stops answering modbus requests while
@@ -62,7 +65,6 @@ function backoffDelayMs(basePauseMs, consecutiveErrors) {
     const delay = basePauseMs * Math.pow(2, consecutiveErrors - 1);
     return Math.min(delay, exports.MAX_BACKOFF_MS);
 }
-exports.backoffDelayMs = backoffDelayMs;
 /**
  * Log the first failure as an error, afterwards only every 30th one so the
  * reason stays discoverable without flooding the log every second.
@@ -70,7 +72,6 @@ exports.backoffDelayMs = backoffDelayMs;
 function shouldLogConnectionError(consecutiveErrors) {
     return consecutiveErrors === 1 || consecutiveErrors % 30 === 0;
 }
-exports.shouldLogConnectionError = shouldLogConnectionError;
 /**
  * JSON.stringify(new Error("...")) returns "{}", which is why the old log lines
  * only showed "ERROR - {}" without any usable reason (issue #2).
@@ -89,5 +90,4 @@ function formatError(error) {
         return String(error);
     }
 }
-exports.formatError = formatError;
 //# sourceMappingURL=connectionPolicy.js.map

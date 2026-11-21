@@ -103,7 +103,7 @@ class SolaredgeModbus extends utils.Adapter {
 			this.solaredge?.close()
 
 			callback();
-		} catch (e) {
+		} catch {
 			callback();
 		}
 	}

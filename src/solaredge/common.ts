@@ -1,4 +1,3 @@
-/* eslint-disable */
 
 /** SunSpec/SolarEdge marker for a value the device does not provide. */
 export const NOT_IMPLEMENTED_UINT64 = BigInt("0xFFFFFFFFFFFFFFFF");
