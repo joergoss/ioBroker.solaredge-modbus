@@ -12,12 +12,9 @@ process.on("unhandledRejection", (e) => {
 	throw e;
 });
 
-// enable the should interface with sinon
-// and load chai-as-promised and sinon-chai by default
-const sinonChai = require("sinon-chai");
-const chaiAsPromised = require("chai-as-promised");
-const { should, use } = require("chai");
+// Only the should interface is used (by the generator's dummy test).
+// sinon-chai and chai-as-promised were loaded here but are not used anywhere,
+// so they and their dependencies are removed instead of being carried along.
+const { should } = require("chai");
 
 should();
-use(sinonChai);
-use(chaiAsPromised);

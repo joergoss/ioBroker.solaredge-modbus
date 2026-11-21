@@ -9,7 +9,7 @@
  *
  * Regenerate deliberately with: npx ts-node src/solaredge/modelSnapshot.ts <out.json>
  */
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { SolaredgeModel } from "./solaredgeModel";
 
 export function createDeterministicBuffer(): Buffer {

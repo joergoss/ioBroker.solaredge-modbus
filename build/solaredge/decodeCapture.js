@@ -44,7 +44,7 @@ exports.bufferFromCapture = bufferFromCapture;
  * Input format (JSON): { "blocks": { "<label>": { "start": <number>, "hex": "<hex>" } } }
  * usage: npx ts-node src/solaredge/decodeCapture.ts <capture.json> [filter]
  */
-const fs = __importStar(require("fs"));
+const fs = __importStar(require("node:fs"));
 const solaredgeModel_1 = require("./solaredgeModel");
 /** Copies captured blocks into a buffer at their absolute register addresses. */
 function bufferFromCapture(capture) {

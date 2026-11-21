@@ -1,16 +1,28 @@
-# Keeps dependencies and the CI actions current without manual chasing.
+# Keeps dependencies and CI actions current without manual chasing.
+# cooldown reduces supply chain risk from freshly published compromised versions.
 version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "monthly"
-    open-pull-requests-limit: 5
-    # Development tooling only; runtime deps are reviewed deliberately.
+      interval: "cron"
+      cronjob: "17 4 * * 3" # weekly, off-peak, spread across projects
+    cooldown:
+      default: 7
+    open-pull-requests-limit: 15
+    # Major @types/node jumps are reviewed manually with the toolchain, not
+    # merged automatically by a bot.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         dependency-type: "development"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "cron"
+      cronjob: "23 4 * * 3"
+    cooldown:
+      default: 7
+    open-pull-requests-limit: 15

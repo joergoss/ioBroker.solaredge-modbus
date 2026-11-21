@@ -15,6 +15,8 @@
 
 Reads a SolarEdge inverter directly via **local SunSpec Modbus TCP** - no SolarEdge cloud account and no internet connection required. Provides inverter, meter and battery values as ioBroker states and supports the SolarEdge storage control registers for writing.
 
+Device documentation: [SolarEdge SunSpec implementation technical note](https://knowledge-center.solaredge.com/sites/kc/files/sunspec-implementation-technical-note.pdf) and [SolarEdge Power Control Open Protocol](https://community.symcon.de/uploads/short-url/aoAU2uHIM0j31NazUuXbUHxi9tE.pdf) (manufacturer documents, mirrored).
+
 ### Requirements
 
 - Modbus TCP enabled on the inverter (SolarEdge SetApp: *Site Communication → Modbus TCP*, default port **1502**).
@@ -22,11 +24,7 @@ Reads a SolarEdge inverter directly via **local SunSpec Modbus TCP** - no SolarE
 
 ### Installation
 
-Until the adapter is published on npm, install it in the ioBroker admin via *Adapters → Install from custom URL* using the GitHub repository URL, or from the command line:
-
-```bash
-iobroker url https://github.com/joergoss/ioBroker.solaredge-modbus
-```
+The adapter is being prepared for publication on npm. Until then, download a packaged release from the [GitHub releases page](https://github.com/joergoss/ioBroker.solaredge-modbus/releases) and install it through the ioBroker admin's adapter management. Once it is available on npm, installation works directly from the ioBroker adapter list.
 
 ### Configuration
 
@@ -197,84 +195,7 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 * (joergoss) new defaults for fresh instances: port 1502, unitId 1, connection_timeout 5000 ms
 * (joergoss) maintenance: CI repaired and running on node 22/24, mocha 11, @iobroker/testing 6, io-package schema (tier, licenseInformation), register level unit tests, repository moved to github.com/joergoss
 
-### 0.0.25 (2022-09-13)
-fix I_AC_Energy_WH scaling factor
-add connection_timout parameter
-
-### 0.0.24 (2022-06-03)
-debug code removed
-
-### 0.0.23 (2022-06-03)
-debug code removed
-
-### 0.0.22 (2022-05-31)
-fix dc.I_DC_Power unit -> int build
-
-### 0.0.21 (2022-05-31)
-fix dc.I_DC_Power unit -> int
-
-### 0.0.20 (2022-05-19)
-using adapterConfig for com_wait_pause
-
-### 0.0.19 (2022-05-17)
-add com_wait_pause config
-add main_loop_pause config
-
-### 0.0.18 (2022-05-17)
-com_wait_pause = 100 // ms
-
-### 0.0.17 (2022-05-17)
-com_wait_pause = 50 // ms
-
-### 0.0.16 (2022-05-02)
-edit connection error handling
-add timout
-reactivate restart after 10 watchdog cycles
-
-### 0.0.15 (2022-04-25)
-add connection fail counter
-restart adapter
-
-### 0.0.14 (2022-03-29)
-add debug log messages and connection lost warning
-
-### 0.0.13 (2022-03-29)
-add connection watchdog
-
-### 0.0.12 (2022-03-28)
-modbus timing
-
-### 0.0.11 (2022-03-28)
-modbus timing
-
-### 0.0.10 (2022-03-21)
-fix connection status
-
-### 0.0.9 (2022-03-21)
-connection status
-
-### 0.0.8 (2022-03-21)
-clean code
-update only changed values
-
-### 0.0.7 (2022-03-08)
-add first meter model
-readHoldingRegisterBlock lenght +1 -> letztes Byte fehlte
-
-### 0.0.6 (2022-02-22)
-	change modbus read write logic
-
-### 0.0.5 (2022-02-21)
-fix build files
-
-### 0.0.4 (2022-02-21)
-fix initObjects
-
-### 0.0.3 (2022-02-21)
-extend data model with states
-
-### 0.0.2 (2022-02-17)
-* (joergoss) initial release
+For older entries see [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
 ## License
 MIT License

@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SolaredgeTCPModbus = exports.RequestTimeoutError = void 0;
-const net = __importStar(require("net"));
+const net = __importStar(require("node:net"));
 const solaredgeModel_1 = require("./solaredgeModel");
 const connectionPolicy_1 = require("./connectionPolicy");
 const pollPlan_1 = require("./pollPlan");
@@ -45,6 +45,10 @@ const deviceSpecs_1 = require("./deviceSpecs");
 /* eslint-disable @typescript-eslint/no-require-imports */
 // create a tcp modbus client (jsmodbus ships no type definitions)
 const modbus = require("jsmodbus");
+const systemTimers = {
+    setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms),
+    clearTimeout: (handle) => globalThis.clearTimeout(handle),
+};
 /** A single modbus request did not answer within the configured timeout. */
 class RequestTimeoutError extends Error {
     constructor(block, timeoutMs) {
@@ -54,7 +58,8 @@ class RequestTimeoutError extends Error {
 }
 exports.RequestTimeoutError = RequestTimeoutError;
 class SolaredgeTCPModbus {
-    constructor(log) {
+    constructor(log, timers = systemTimers) {
+        this.timers = timers;
         this.bufferSize = 0xFFFF;
         this.buf = Buffer.alloc(this.bufferSize * 2);
         /** When enabled, every polled block is logged as raw hex for bug reports. */
@@ -68,7 +73,7 @@ class SolaredgeTCPModbus {
         this.log.debug("solaredgeTCPModbus constructor");
     }
     async sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => this.timers.setTimeout(resolve, ms));
     }
     async updateSolaredgeData(hr) {
         const tmd = hr;
@@ -215,7 +220,7 @@ class SolaredgeTCPModbus {
             const clearConnectionTimeout = () => {
                 const timer = timeoutRef;
                 if (timer !== undefined) {
-                    clearTimeout(timer);
+                    this.timers.clearTimeout(timer);
                     timeoutRef = undefined;
                 }
             };
@@ -227,7 +232,7 @@ class SolaredgeTCPModbus {
                 this.close();
                 reject(reason);
             };
-            timeoutRef = setTimeout(() => {
+            timeoutRef = this.timers.setTimeout(() => {
                 fail(new Error(`Connection timeout after ${config.connection_timeout} ms (${config.hostname}:${config.port})`));
             }, config.connection_timeout);
             // If the peer drops the session later on, just forget the client.
@@ -276,13 +281,13 @@ class SolaredgeTCPModbus {
             return await Promise.race([
                 request,
                 new Promise((_resolve, reject) => {
-                    timer = setTimeout(() => reject(new RequestTimeoutError(label, timeoutMs)), timeoutMs);
+                    timer = this.timers.setTimeout(() => reject(new RequestTimeoutError(label, timeoutMs)), timeoutMs);
                 }),
             ]);
         }
         finally {
             if (timer !== undefined)
-                clearTimeout(timer);
+                this.timers.clearTimeout(timer);
         }
     }
     async readHoldingRegisterBlock(client, block, timeoutMs) {
