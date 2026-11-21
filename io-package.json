@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "solaredge-modbus",
-        "version": "0.4.2",
+        "version": "0.5.0",
         "news": {
+            "0.5.0": {
+                "en": "meets the ioBroker repository requirements (official repochecker): current js-controller and admin dependencies, framework timers, compact-mode safe, node 26 in CI, trusted publishing for npm, release tooling, complete i18n files, dependabot hardening",
+                "de": "Erfuellt die ioBroker-Vorgaben (offizieller Repochecker): aktuelle js-controller- und admin-Abhaengigkeiten, Framework-Timer, compact-mode-sicher, Node 26 in der CI, Trusted Publishing fuer npm, Release-Werkzeuge, vollstaendige i18n-Dateien, Dependabot-Haertung"
+            },
             "0.4.2": {
                 "en": "fix remote_control_command_timeout word order (uint32sw) for read and write - a 3600 s timeout was shown as 235929600\nfull audit against official SolarEdge documents: all 41 inverter registers match technical note 3.3, meter map without type deviations",
                 "de": "Fix: remote_control_command_timeout mit korrekter Wortreihenfolge (uint32sw) beim Lesen und Schreiben - ein 3600-s-Timeout wurde als 235929600 angezeigt\nKompletter Abgleich mit den offiziellen SolarEdge-Dokumenten: alle 41 Inverter-Register stimmen mit Technical Note 3.3 ueberein, Meter-Map ohne Typabweichungen"

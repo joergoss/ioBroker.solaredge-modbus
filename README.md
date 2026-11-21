@@ -151,6 +151,9 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.5.0 (2026-11-21)
+* (joergoss) meet the ioBroker repository requirements, verified with the official @iobroker/repochecker: current js-controller and admin dependencies, deprecated fields removed, framework timers, compact-mode safe tools, node 26 in CI, trusted publishing for npm, release tooling, complete i18n files, dependabot hardening
+
 ### 0.4.2 (2026-11-21)
 * (joergoss) fix remote_control_command_timeout word order (uint32sw) for read and write - a 3600 s timeout was shown as 235929600 (found via the official Power Control Open Protocol document)
 * (joergoss) full audit against official SolarEdge documents: all 41 inverter registers match technical note 3.3, meter map without type deviations
