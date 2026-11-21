@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "solaredge-modbus",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "news": {
+            "0.3.0": {
+                "en": "admin UI migrated to JSON config with validation, help texts and German/English translations\ntoolchain: typescript 5.9, eslint 9 flat config, adapter-core 3.4.3, jsmodbus 5, @types/node 22\nunused generator dependencies removed; CI actions updated",
+                "de": "Admin-Oberflaeche auf JSON Config migriert, mit Validierung, Hilfetexten und deutscher/englischer Uebersetzung\nWerkzeugkette: TypeScript 5.9, ESLint 9 Flat Config, adapter-core 3.4.3, jsmodbus 5, @types/node 22\nUngenutzte Generator-Abhaengigkeiten entfernt; CI-Aktionen aktualisiert"
+            },
             "0.2.0": {
                 "en": "battery status text mapping incl. 10 = Power Saving (#11)\noptional export control block 0xF700 (#12)\nperiodic re-detection of meters/batteries (redetect_interval_minutes)\ndocument that BYD/LG lifetime counters are unreliable at the source (#10)",
                 "de": "Batterie-Status als Klartext, inkl. 10 = Power Saving (#11)\noptionaler Export-Control-Block 0xF700 (#12)\nperiodische Wieder-Erkennung von Metern/Batterien (redetect_interval_minutes)\nDokumentiert: BYD/LG-Lifetime-Zaehler sind an der Quelle unzuverlaessig (#10)"
@@ -198,18 +202,6 @@
                 "es": "temporización modbus",
                 "pl": "taktowanie modbusa",
                 "zh-cn": "总线定时"
-            },
-            "0.0.10": {
-                "en": "fix connection status",
-                "de": "Verbindungsstatus beheben",
-                "ru": "исправить статус подключения",
-                "pt": "corrigir o status da conexão",
-                "nl": "verbindingsstatus herstellen",
-                "fr": "corriger l'état de la connexion",
-                "it": "correggere lo stato della connessione",
-                "es": "arreglar el estado de la conexión",
-                "pl": "napraw stan połączenia",
-                "zh-cn": "修复连接状态"
             }
         },
         "title": "solaredge-modbus",

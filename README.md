@@ -153,6 +153,12 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.3.0 (2026-11-21)
+* (joergoss) admin UI migrated to JSON config: grouped sections, min/max validation, help texts, German/English translations, conditional visibility
+* (joergoss) toolchain modernised: typescript 5.9, eslint 9 flat config, @typescript-eslint 8, adapter-core 3.4.3, jsmodbus 5, @types/node 22, @types/iobroker 4
+* (joergoss) removed unused generator code and dependencies (tools.ts/axios, gulp, proxyquire)
+* (joergoss) CI actions updated (testing-action-check v2)
+
 ### 0.2.0 (2026-11-21)
 * (joergoss) battery status text mapping including 10 = Power Saving; 6/7 corrected to Preserve Charge/Idle (#11)
 * (joergoss) optional export control block 0xF700 (mode, limit_mode, site_limit) (#12)
