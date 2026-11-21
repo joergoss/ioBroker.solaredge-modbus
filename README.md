@@ -153,6 +153,11 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.4.0 (2026-11-21)
+* (joergoss) deep audit: every meter and battery register cross checked address by address against an independent implementation
+* (joergoss) new states: full meter identification (option, version, serial number, address, SunSpec DID and block length), battery SunSpec DID and event logs - all within blocks that are polled anyway
+* (joergoss) fix 64 bit writes (JavaScript shift was a no-op); the write path is now covered by a modbus test server including FIFO ordering and exact bytes
+
 ### 0.3.0 (2026-11-21)
 * (joergoss) admin UI migrated to JSON config: grouped sections, min/max validation, help texts, German/English translations, conditional visibility
 * (joergoss) toolchain modernised: typescript 5.9, eslint 9 flat config, @typescript-eslint 8, adapter-core 3.4.3, jsmodbus 5, @types/node 22, @types/iobroker 4

@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "solaredge-modbus",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "news": {
+            "0.4.0": {
+                "en": "deep audit with address-by-address comparison against an independent implementation\nnew states: full meter identification (option, version, serial, address, DID, block length), battery sunspec DID and event logs\nfix 64 bit writes (javascript shift no-op); write path now covered by a modbus test server",
+                "de": "Tiefen-Audit mit adressweisem Vergleich gegen eine unabhaengige Implementierung\nNeue Datenpunkte: vollstaendige Meter-Identifikation (Option, Version, Seriennummer, Adresse, DID, Blocklaenge), Batterie-SunSpec-DID und Ereignis-Logs\n64-bit-Schreiben korrigiert (JavaScript-Shift war ein No-Op); Schreibpfad jetzt durch einen Modbus-Testserver abgedeckt"
+            },
             "0.3.0": {
                 "en": "admin UI migrated to JSON config with validation, help texts and German/English translations\ntoolchain: typescript 5.9, eslint 9 flat config, adapter-core 3.4.3, jsmodbus 5, @types/node 22\nunused generator dependencies removed; CI actions updated",
                 "de": "Admin-Oberflaeche auf JSON Config migriert, mit Validierung, Hilfetexten und deutscher/englischer Uebersetzung\nWerkzeugkette: TypeScript 5.9, ESLint 9 Flat Config, adapter-core 3.4.3, jsmodbus 5, @types/node 22\nUngenutzte Generator-Abhaengigkeiten entfernt; CI-Aktionen aktualisiert"
@@ -180,18 +184,6 @@
                 "zh-cn": "添加连接看门狗"
             },
             "0.0.12": {
-                "en": "modbus timing",
-                "de": "Modbus-Timing",
-                "ru": "синхронизация Modbus",
-                "pt": "temporização do modbus",
-                "nl": "modbus-timing",
-                "fr": "temporisation modbus",
-                "it": "tempismo modbus",
-                "es": "temporización modbus",
-                "pl": "taktowanie modbusa",
-                "zh-cn": "总线定时"
-            },
-            "0.0.11": {
                 "en": "modbus timing",
                 "de": "Modbus-Timing",
                 "ru": "синхронизация Modbus",
