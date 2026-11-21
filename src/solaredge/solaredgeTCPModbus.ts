@@ -1,6 +1,6 @@
 // Solaredge MODBUS
 
-import * as net from "net";
+import * as net from "node:net";
 import { SolaredgeHoldingRegister, SolaredgeDataEntry, SolaredgeModel, SolaredgeWriteSingleCoil, SolaredgeWriteMultipleHoldingRegister } from "./solaredgeModel";
 import { ConnectionSettings, withConnectionDefaults } from "./connectionPolicy";
 import { buildPollPlan, PollBlock, PollPlanOptions } from "./pollPlan";
@@ -23,6 +23,21 @@ export interface DetectedDevices {
 /* eslint-disable @typescript-eslint/no-require-imports */
 // create a tcp modbus client (jsmodbus ships no type definitions)
 const modbus = require("jsmodbus");
+
+/**
+ * Timer functions are injected: the adapter passes its own setTimeout/clearTimeout
+ * (cleared automatically on unload), while standalone tools and tests use the
+ * system timers. Plain global setTimeout in adapter code is discouraged.
+ */
+export interface TimerApi {
+	setTimeout: (fn: () => void, ms: number) => NodeJS.Timeout;
+	clearTimeout: (handle: NodeJS.Timeout) => void;
+}
+
+const systemTimers: TimerApi = {
+	setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms),
+	clearTimeout: (handle) => globalThis.clearTimeout(handle),
+};
 
 /** A single modbus request did not answer within the configured timeout. */
 export class RequestTimeoutError extends Error {
@@ -58,14 +73,14 @@ export class SolaredgeTCPModbus {
 	lastConnectedTimestamp = 0
 	connectionErrorCounter = 0
 
-	constructor(log: ioBroker.Logger) {
+	constructor(log: ioBroker.Logger, private timers: TimerApi = systemTimers) {
 		this.log = log
 		this.log.debug("solaredgeTCPModbus constructor")
 
 	}
 
 	private async sleep(ms:number): Promise<void> {
-		return new Promise(resolve => setTimeout(resolve, ms));
+		return new Promise(resolve => this.timers.setTimeout(resolve, ms));
 	}
 
 	async updateSolaredgeData(hr: SolaredgeHoldingRegister): Promise<void> {
@@ -224,7 +239,7 @@ export class SolaredgeTCPModbus {
 			const clearConnectionTimeout = (): void => {
 				const timer = timeoutRef
 				if (timer !== undefined) {
-					clearTimeout(timer)
+					this.timers.clearTimeout(timer)
 					timeoutRef = undefined
 				}
 			}
@@ -237,7 +252,7 @@ export class SolaredgeTCPModbus {
 				reject(reason)
 			}
 
-			timeoutRef = setTimeout(() => {
+			timeoutRef = this.timers.setTimeout(() => {
 				fail(new Error(`Connection timeout after ${config.connection_timeout} ms (${config.hostname}:${config.port})`))
 			}, config.connection_timeout)
 
@@ -288,11 +303,11 @@ export class SolaredgeTCPModbus {
 			return await Promise.race([
 				request,
 				new Promise<never>((_resolve, reject) => {
-					timer = setTimeout(() => reject(new RequestTimeoutError(label, timeoutMs)), timeoutMs)
+					timer = this.timers.setTimeout(() => reject(new RequestTimeoutError(label, timeoutMs)), timeoutMs)
 				}),
 			])
 		} finally {
-			if (timer !== undefined) clearTimeout(timer)
+			if (timer !== undefined) this.timers.clearTimeout(timer)
 		}
 	}
 

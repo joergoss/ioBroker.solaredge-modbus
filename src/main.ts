@@ -23,8 +23,8 @@ class SolaredgeModbus extends utils.Adapter {
 	mainLoopRunning = true
 
 	/** Handles kept so onUnload can really stop the adapter (issue #2). */
-	private watchDogInterval?: NodeJS.Timeout
-	private mainLoopSleepTimeout?: NodeJS.Timeout
+	private watchDogInterval?: ioBroker.Interval
+	private mainLoopSleepTimeout?: ioBroker.Timeout
 	private mainLoopSleepResolve?: () => void
 
 	private consecutiveErrors = 0
@@ -34,7 +34,7 @@ class SolaredgeModbus extends utils.Adapter {
 	private statesInitialized = false
 	/** Result of the optional startup auto detection (issue: device detection). */
 	private detectedDevices?: DetectedDevices
-	private redetectInterval?: NodeJS.Timeout
+	private redetectInterval?: ioBroker.Interval
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -52,7 +52,10 @@ class SolaredgeModbus extends utils.Adapter {
 	private async onReady(): Promise<void> {
 		// Initialize your adapter here
 
-		this.solaredge = new SolaredgeTCPModbus(this.log)
+		this.solaredge = new SolaredgeTCPModbus(this.log, {
+			setTimeout: (fn, ms) => this.setTimeout(fn, ms) as unknown as NodeJS.Timeout,
+			clearTimeout: (handle) => this.clearTimeout(handle as unknown as ioBroker.Timeout),
+		})
 
 		// Auto detection is deliberately opt-in for existing instances: the
 		// setting did not exist before, so an absent value keeps the previous
@@ -84,17 +87,17 @@ class SolaredgeModbus extends utils.Adapter {
 			this.mainLoopRunning = false
 
 			if (this.watchDogInterval) {
-				clearInterval(this.watchDogInterval)
+				this.clearInterval(this.watchDogInterval)
 				this.watchDogInterval = undefined
 			}
 			if (this.redetectInterval) {
-				clearInterval(this.redetectInterval)
+				this.clearInterval(this.redetectInterval)
 				this.redetectInterval = undefined
 			}
 			// Wake the main loop up instead of letting it sleep into the next
 			// adapter incarnation - that caused "DB closed" errors after restarts.
 			if (this.mainLoopSleepTimeout) {
-				clearTimeout(this.mainLoopSleepTimeout)
+				this.clearTimeout(this.mainLoopSleepTimeout)
 				this.mainLoopSleepTimeout = undefined
 			}
 			if (this.mainLoopSleepResolve) {
@@ -242,7 +245,7 @@ class SolaredgeModbus extends utils.Adapter {
 		if (minutes <= 0) {
 			return
 		}
-		this.redetectInterval = setInterval(async () => {
+		this.redetectInterval = this.setInterval(async () => {
 			if (!this.mainLoopRunning) {
 				return
 			}
@@ -255,7 +258,7 @@ class SolaredgeModbus extends utils.Adapter {
 	}
 
 	private async startWatchDog(): Promise<void> {
-		this.watchDogInterval = setInterval( async ()=> {
+		this.watchDogInterval = this.setInterval( async ()=> {
 			if (!this.mainLoopRunning) {
 				return
 			}
@@ -286,7 +289,7 @@ class SolaredgeModbus extends utils.Adapter {
 	private async sleep(ms:number): Promise<void> {
 		return new Promise(resolve => {
 			this.mainLoopSleepResolve = resolve
-			this.mainLoopSleepTimeout = setTimeout(() => {
+			this.mainLoopSleepTimeout = this.setTimeout(() => {
 				this.mainLoopSleepTimeout = undefined
 				this.mainLoopSleepResolve = undefined
 				resolve()

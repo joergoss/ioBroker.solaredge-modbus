@@ -15,6 +15,8 @@
 
 Reads a SolarEdge inverter directly via **local SunSpec Modbus TCP** - no SolarEdge cloud account and no internet connection required. Provides inverter, meter and battery values as ioBroker states and supports the SolarEdge storage control registers for writing.
 
+Device documentation: [SolarEdge SunSpec implementation technical note](https://knowledge-center.solaredge.com/sites/kc/files/sunspec-implementation-technical-note.pdf) and [SolarEdge Power Control Open Protocol](https://community.symcon.de/uploads/short-url/aoAU2uHIM0j31NazUuXbUHxi9tE.pdf) (manufacturer documents, mirrored).
+
 ### Requirements
 
 - Modbus TCP enabled on the inverter (SolarEdge SetApp: *Site Communication → Modbus TCP*, default port **1502**).
@@ -22,11 +24,7 @@ Reads a SolarEdge inverter directly via **local SunSpec Modbus TCP** - no SolarE
 
 ### Installation
 
-Until the adapter is published on npm, install it in the ioBroker admin via *Adapters → Install from custom URL* using the GitHub repository URL, or from the command line:
-
-```bash
-iobroker url https://github.com/joergoss/ioBroker.solaredge-modbus
-```
+The adapter is being prepared for publication on npm. Until then, download a packaged release from the [GitHub releases page](https://github.com/joergoss/ioBroker.solaredge-modbus/releases) and install it through the ioBroker admin's adapter management. Once it is available on npm, installation works directly from the ioBroker adapter list.
 
 ### Configuration
 

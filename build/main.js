@@ -62,7 +62,10 @@ class SolaredgeModbus extends utils.Adapter {
      */
     async onReady() {
         // Initialize your adapter here
-        this.solaredge = new solaredgeTCPModbus_1.SolaredgeTCPModbus(this.log);
+        this.solaredge = new solaredgeTCPModbus_1.SolaredgeTCPModbus(this.log, {
+            setTimeout: (fn, ms) => this.setTimeout(fn, ms),
+            clearTimeout: (handle) => this.clearTimeout(handle),
+        });
         // Auto detection is deliberately opt-in for existing instances: the
         // setting did not exist before, so an absent value keeps the previous
         // behaviour (meter_count / battery_count). New instances get it enabled
@@ -89,17 +92,17 @@ class SolaredgeModbus extends utils.Adapter {
         try {
             this.mainLoopRunning = false;
             if (this.watchDogInterval) {
-                clearInterval(this.watchDogInterval);
+                this.clearInterval(this.watchDogInterval);
                 this.watchDogInterval = undefined;
             }
             if (this.redetectInterval) {
-                clearInterval(this.redetectInterval);
+                this.clearInterval(this.redetectInterval);
                 this.redetectInterval = undefined;
             }
             // Wake the main loop up instead of letting it sleep into the next
             // adapter incarnation - that caused "DB closed" errors after restarts.
             if (this.mainLoopSleepTimeout) {
-                clearTimeout(this.mainLoopSleepTimeout);
+                this.clearTimeout(this.mainLoopSleepTimeout);
                 this.mainLoopSleepTimeout = undefined;
             }
             if (this.mainLoopSleepResolve) {
@@ -239,7 +242,7 @@ class SolaredgeModbus extends utils.Adapter {
         if (minutes <= 0) {
             return;
         }
-        this.redetectInterval = setInterval(async () => {
+        this.redetectInterval = this.setInterval(async () => {
             if (!this.mainLoopRunning) {
                 return;
             }
@@ -252,7 +255,7 @@ class SolaredgeModbus extends utils.Adapter {
         }, minutes * 60000);
     }
     async startWatchDog() {
-        this.watchDogInterval = setInterval(async () => {
+        this.watchDogInterval = this.setInterval(async () => {
             if (!this.mainLoopRunning) {
                 return;
             }
@@ -283,7 +286,7 @@ class SolaredgeModbus extends utils.Adapter {
     async sleep(ms) {
         return new Promise(resolve => {
             this.mainLoopSleepResolve = resolve;
-            this.mainLoopSleepTimeout = setTimeout(() => {
+            this.mainLoopSleepTimeout = this.setTimeout(() => {
                 this.mainLoopSleepTimeout = undefined;
                 this.mainLoopSleepResolve = undefined;
                 resolve();

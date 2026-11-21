@@ -15,7 +15,9 @@
             "newLine": true,
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "port": {
             "type": "number",
@@ -26,7 +28,9 @@
             "step": 1,
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "unitId": {
             "type": "number",
@@ -37,7 +41,9 @@
             "step": 1,
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "connection_timeout": {
             "type": "number",
@@ -50,7 +56,9 @@
             "newLine": true,
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "com_wait_pause": {
             "type": "number",
@@ -62,7 +70,9 @@
             "unit": "ms",
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "main_loop_pause": {
             "type": "number",
@@ -74,7 +84,9 @@
             "unit": "ms",
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "_devicesHeader": {
             "type": "header",
@@ -100,7 +112,9 @@
             "hidden": "!data.auto_detect_devices",
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "meter_count": {
             "type": "number",
@@ -112,7 +126,9 @@
             "hidden": "data.auto_detect_devices",
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "battery_count": {
             "type": "number",
@@ -124,7 +140,9 @@
             "hidden": "data.auto_detect_devices",
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "_optionalHeader": {
             "type": "header",
@@ -162,7 +180,9 @@
             "newLine": true,
             "xs": 12,
             "sm": 6,
-            "md": 4
+            "md": 4,
+            "lg": 3,
+            "xl": 2
         },
         "log_raw_registers": {
             "type": "checkbox",

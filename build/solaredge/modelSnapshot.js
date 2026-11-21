@@ -46,7 +46,7 @@ exports.decodeAll = decodeAll;
  *
  * Regenerate deliberately with: npx ts-node src/solaredge/modelSnapshot.ts <out.json>
  */
-const fs = __importStar(require("fs"));
+const fs = __importStar(require("node:fs"));
 const solaredgeModel_1 = require("./solaredgeModel");
 function createDeterministicBuffer() {
     // Fixed seed: same bytes on every run, no hardware involved.

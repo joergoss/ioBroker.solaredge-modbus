@@ -68,5 +68,8 @@
   "bugs": {
     "url": "https://github.com/joergoss/ioBroker.solaredge-modbus/issues"
   },
-  "readmeFilename": "README.md"
+  "readmeFilename": "README.md",
+  "engines": {
+    "node": ">=22.12.0"
+  }
 }

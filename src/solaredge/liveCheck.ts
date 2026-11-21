@@ -61,7 +61,7 @@ async function main(): Promise<void> {
 			failures++;
 			console.log(`cycle ${cycle}: FAILED ${(e as Error).message}, session held: ${modbus.isConnected()}`);
 		}
-		await new Promise(r => setTimeout(r, 1000));
+		await new Promise(r => { globalThis.setTimeout(r, 1000) });
 	}
 
 	console.log("\n--- decoded values from the last cycle ---");
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
 
 	modbus.close();
 	console.log(`\n${cycles} cycles, ${failures} failures`);
-	process.exit(failures > 0 ? 1 : 0);
+	process.exitCode = failures > 0 ? 1 : 0;
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch(e => { console.error(e); process.exitCode = 1; });

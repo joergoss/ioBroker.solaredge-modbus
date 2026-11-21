@@ -1,5 +1,10 @@
 name: Test and Release
 
+# Cancel superseded runs on the same ref instead of piling them up
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # Run this job on all pushes and pull requests
 # as well as tags with a semantic version
 on:
@@ -35,13 +40,13 @@ jobs:
   # Runs adapter tests on all supported node versions and OSes
   adapter-tests:
     if: contains(github.event.head_commit.message, '[skip ci]') == false
+    needs: [check-and-lint]
 
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # Node 12/14/16 are end of life. @iobroker/testing 6 requires node >= 22.19
-        # and installs the current js-controller, which needs >= 22.22.2 itself.
-        node-version: [22.x, 24.x]
+        # Current supported lines; node 26 is required by the ioBroker checks.
+        node-version: [22.x, 24.x, 26.x]
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
@@ -53,40 +58,22 @@ jobs:
           # install-command: 'npm install'
           build: true
 
-# TODO: To enable automatic npm releases, create a token on npmjs.org 
-# Enter this token as a GitHub secret (with name NPM_TOKEN) in the repository options
-# Then uncomment the following block:
-
-#  # Deploys the final package to NPM
-#  deploy:
-#    needs: [check-and-lint, adapter-tests]
-#
-#    # Trigger this step only when a commit on any branch is tagged with a version number
-#    if: |
-#      contains(github.event.head_commit.message, '[skip ci]') == false &&
-#      github.event_name == 'push' &&
-#      startsWith(github.ref, 'refs/tags/v')
-#
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - uses: ioBroker/testing-action-deploy@v1
-#        with:
-#          node-version: '14.x'
-#          # Uncomment the following line if your adapter cannot be installed using 'npm ci'
-#          # install-command: 'npm install'
-#          build: true
-#          npm-token: ${{ secrets.NPM_TOKEN }}
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#
-#          # When using Sentry for error reporting, Sentry can be informed about new releases
-#          # To enable create a API-Token in Sentry (User settings, API keys)
-#          # Enter this token as a GitHub secret (with name SENTRY_AUTH_TOKEN) in the repository options
-#          # Then uncomment and customize the following block:
-#          sentry: true
-#          sentry-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-#          sentry-project: "iobroker-solaredge-modbus"
-#          sentry-version-prefix: "iobroker.solaredge-modbus"
-#          sentry-sourcemap-paths: "build/"
-#          # If your sentry project is linked to a GitHub repository, you can enable the following option
-#          # sentry-github-integration: true
+# Deploys the final package to NPM on version tags.
+# Disabled until you opt in: set the repository variable NPM_DEPLOY_ENABLED=true
+# (Settings -> Secrets and variables -> Actions -> Variables) after creating the
+# NPM_TOKEN secret. Nothing fails on tags while it is switched off.
+deploy:
+  needs: [check-and-lint, adapter-tests]
+  if: |
+    vars.NPM_DEPLOY_ENABLED == 'true' &&
+    contains(github.event.head_commit.message, '[skip ci]') == false &&
+    github.event_name == 'push' &&
+    startsWith(github.ref, 'refs/tags/v')
+  runs-on: ubuntu-latest
+  steps:
+    - uses: ioBroker/testing-action-deploy@v1
+      with:
+        node-version: '22.x'
+        build: true
+        npm-token: ${{ secrets.NPM_TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}

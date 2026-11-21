@@ -8,7 +8,7 @@
  * Input format (JSON): { "blocks": { "<label>": { "start": <number>, "hex": "<hex>" } } }
  * usage: npx ts-node src/solaredge/decodeCapture.ts <capture.json> [filter]
  */
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { SolaredgeModel } from "./solaredgeModel";
 
 export interface CaptureBlock {
