@@ -118,10 +118,11 @@ describe("solaredgeModel register decoding", () => {
 			const legacy = legacySnapshot as Record<string, unknown>;
 
 			const differences: string[] = [];
-			// These two changed on purpose after a real capture proved that the
-			// battery block needs word swap here as well (issue #4): status 10 was
-			// reported as 655360. Everything else must stay bit identical.
-			const intentionalChanges = ["battery.status", "battery.status_internal"];
+			// These changed on purpose after real captures proved the word order was
+			// wrong: battery status 10 was reported as 655360 (issue #4), and the
+			// remote control timeout 3600 s as 235929600 (official power control doc).
+			// Everything else must stay bit identical.
+			const intentionalChanges = ["battery.status", "battery.status_internal", "control.remote_control_command_timeout"];
 			for (const [key, expected] of Object.entries(legacy)) {
 				const actual = current[key];
 				if (expected === null && typeof actual === "number" && !Number.isFinite(actual)) {
@@ -177,6 +178,27 @@ describe("solaredgeModel register decoding", () => {
 
 			const model = new SolaredgeModel();
 			expect(model["meter.2.M_AC_Power"].readRegister!(tmd)).to.be.closeTo(123.4, 0.000001);
+		});
+	});
+
+	describe("control.remote_control_command_timeout (word order, found via the official power control document)", () => {
+		it("decodes a 3600 s timeout as 3600, not 3600 << 16", () => {
+			const tmd = emptyRegisterBuffer();
+			// measured on the live system: [0x0E10, 0x0000] was reported as 235929600
+			tmd.writeUInt16BE(0x0E10, 0xE00B * 2);
+			tmd.writeUInt16BE(0x0000, 0xE00B * 2 + 2);
+
+			const model = new SolaredgeModel();
+			expect(model["control.remote_control_command_timeout"].readRegister!(tmd)).to.equal(3600);
+		});
+
+		it("writes the timeout with the same reversed word order", () => {
+			const model = new SolaredgeModel();
+			const cmd = model["control.remote_control_command_timeout"].writeRegister!({ value: 3600 });
+			expect(cmd.register).to.equal(0xE00B);
+			// high word first on the wire for this block would be wrong;
+			// the low word belongs to the first register
+			expect(cmd.value!.toString("hex")).to.equal("0e100000");
 		});
 	});
 

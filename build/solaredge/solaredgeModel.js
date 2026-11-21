@@ -482,14 +482,16 @@ class SolaredgeModel {
             }
         };
         this["control.remote_control_command_timeout"] = {
+            // Verified live: a 3600 s timeout arrived as 235929600 (= 3600 << 16).
+            // The whole StorEdge block uses reversed word order, so uint32sw it is.
             descr: "0-86400(24h)",
             unit: "s",
             role: "value",
             type: "number",
-            readRegister: (tmd) => (0, common_1.extractValue)("uint32be", 2, tmd, 0xE00B),
+            readRegister: (tmd) => (0, common_1.extractValue)("uint32sw", 2, tmd, 0xE00B),
             writeRegister: (wd) => {
                 const value = typeof wd.value == "number" ? wd.value : 0;
-                return { register: 0xE00B, value: (0, common_1.writeValue)("uint32be", value) };
+                return { register: 0xE00B, value: (0, common_1.writeValue)("uint32sw", value) };
             },
             value: 0,
         };
