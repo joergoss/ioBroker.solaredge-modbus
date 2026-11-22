@@ -151,6 +151,10 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 <!-- ### **WORK IN PROGRESS** -->
+### 0.6.0 (2026-11-22)
+* (joergoss) onUnload waits for an in-flight poll cycle before closing (the remaining source of "DB closed" errors in #2)
+* (joergoss) removed unused Victron-specific helpers from solaredgeUtil
+
 ### 0.5.0 (2026-11-21)
 * (joergoss) meet the ioBroker repository requirements, verified with the official @iobroker/repochecker: current js-controller and admin dependencies, deprecated fields removed, framework timers, compact-mode safe tools, node 26 in CI, trusted publishing for npm, release tooling, complete i18n files, dependabot hardening
 

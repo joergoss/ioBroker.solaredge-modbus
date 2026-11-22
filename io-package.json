@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "solaredge-modbus",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "news": {
+            "0.6.0": {
+                "en": "onUnload now waits for an in-flight poll cycle before closing (the remaining source of \"DB closed\" errors in #2)\nremoved unused Victron-specific helpers from solaredgeUtil",
+                "de": "onUnload wartet jetzt auf einen laufenden Abfragezyklus vor dem Schliessen (die verbleibende Ursache der \"DB closed\"-Fehler in #2)\nUngenutzte Victron-Hilfsfunktionen aus solaredgeUtil entfernt"
+            },
             "0.5.0": {
                 "en": "meets the ioBroker repository requirements (official repochecker): current js-controller and admin dependencies, framework timers, compact-mode safe, node 26 in CI, trusted publishing for npm, release tooling, complete i18n files, dependabot hardening",
                 "de": "Erfuellt die ioBroker-Vorgaben (offizieller Repochecker): aktuelle js-controller- und admin-Abhaengigkeiten, Framework-Timer, compact-mode-sicher, Node 26 in der CI, Trusted Publishing fuer npm, Release-Werkzeuge, vollstaendige i18n-Dateien, Dependabot-Haertung"
