@@ -32,6 +32,9 @@ class SolaredgeModbus extends utils.Adapter {
 	private infoConnectionState: boolean | undefined
 	/** First successful poll writes every state once, including zero values. */
 	private statesInitialized = false
+	/** Resolves when the main loop has really ended (used by onUnload). */
+	private mainLoopFinished?: Promise<void>
+	private mainLoopFinishedResolve?: () => void
 	/** Result of the optional startup auto detection (issue: device detection). */
 	private detectedDevices?: DetectedDevices
 	private redetectInterval?: ioBroker.Interval
@@ -82,7 +85,7 @@ class SolaredgeModbus extends utils.Adapter {
 	/**
 	 * Is called when adapter shuts down - callback has to be called under any circumstances!
 	 */
-	private onUnload(callback: () => void): void {
+	private async onUnload(callback: () => void): Promise<void> {
 		try {
 			this.mainLoopRunning = false
 
@@ -105,10 +108,17 @@ class SolaredgeModbus extends utils.Adapter {
 				this.mainLoopSleepResolve = undefined
 			}
 
-			this.solaredge?.close()
+			// Wait for an in-flight poll cycle before the databases are closed.
+			// Writing states after unload was the source of "DB closed" (#2).
+			if (this.mainLoopFinished) {
+				await Promise.race([
+					this.mainLoopFinished,
+					new Promise<void>(resolve => { this.setTimeout(resolve, 2000) }),
+				])
+			}
 
-			callback();
-		} catch {
+			this.solaredge?.close()
+		} finally {
 			callback();
 		}
 	}
@@ -170,7 +180,9 @@ class SolaredgeModbus extends utils.Adapter {
 
 	private async mainLoop(): Promise<void> {
 		this.log.debug("mainloop: start")
-		while(this.mainLoopRunning) {
+		this.mainLoopFinished = new Promise<void>(resolve => { this.mainLoopFinishedResolve = resolve })
+		try {
+			while(this.mainLoopRunning) {
 			const configProblem = validateConnectionConfig(this.config)
 			if (configProblem) {
 				this.reportConfigProblem(configProblem)
@@ -206,7 +218,11 @@ class SolaredgeModbus extends utils.Adapter {
 			this.log.debug("sleep: " + delay)
 			await this.sleep(delay)
 		}
-		this.log.debug("mainloop: end")
+		} finally {
+			// resolve even when the loop exits through an error
+			this.mainLoopFinishedResolve?.()
+			this.log.debug("mainloop: end")
+		}
 	}
 
 	/** Reports a broken configuration once per change instead of once per second. */

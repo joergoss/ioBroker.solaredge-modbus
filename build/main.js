@@ -87,7 +87,7 @@ class SolaredgeModbus extends utils.Adapter {
     /**
      * Is called when adapter shuts down - callback has to be called under any circumstances!
      */
-    onUnload(callback) {
+    async onUnload(callback) {
         var _a;
         try {
             this.mainLoopRunning = false;
@@ -109,10 +109,17 @@ class SolaredgeModbus extends utils.Adapter {
                 this.mainLoopSleepResolve();
                 this.mainLoopSleepResolve = undefined;
             }
+            // Wait for an in-flight poll cycle before the databases are closed.
+            // Writing states after unload was the source of "DB closed" (#2).
+            if (this.mainLoopFinished) {
+                await Promise.race([
+                    this.mainLoopFinished,
+                    new Promise(resolve => { this.setTimeout(resolve, 2000); }),
+                ]);
+            }
             (_a = this.solaredge) === null || _a === void 0 ? void 0 : _a.close();
-            callback();
         }
-        catch (_b) {
+        finally {
             callback();
         }
     }
@@ -168,44 +175,52 @@ class SolaredgeModbus extends utils.Adapter {
         return true;
     }
     async mainLoop() {
+        var _a;
         this.log.debug("mainloop: start");
-        while (this.mainLoopRunning) {
-            const configProblem = (0, connectionPolicy_1.validateConnectionConfig)(this.config);
-            if (configProblem) {
-                this.reportConfigProblem(configProblem);
-                await this.sleep(connectionPolicy_1.INVALID_CONFIG_RETRY_MS);
-                continue;
-            }
-            if (this.configProblem) {
-                this.log.info("configuration is valid now, starting to poll the inverter");
-                this.configProblem = null;
-            }
-            let delay = (0, connectionPolicy_1.withConnectionDefaults)(this.config).main_loop_pause;
-            try {
-                await this.updateStates();
-                if (this.consecutiveErrors > 0) {
-                    this.log.info(`connection to ${this.config.hostname} restored after ${this.consecutiveErrors} failed poll cycle(s)`);
+        this.mainLoopFinished = new Promise(resolve => { this.mainLoopFinishedResolve = resolve; });
+        try {
+            while (this.mainLoopRunning) {
+                const configProblem = (0, connectionPolicy_1.validateConnectionConfig)(this.config);
+                if (configProblem) {
+                    this.reportConfigProblem(configProblem);
+                    await this.sleep(connectionPolicy_1.INVALID_CONFIG_RETRY_MS);
+                    continue;
                 }
-                this.consecutiveErrors = 0;
+                if (this.configProblem) {
+                    this.log.info("configuration is valid now, starting to poll the inverter");
+                    this.configProblem = null;
+                }
+                let delay = (0, connectionPolicy_1.withConnectionDefaults)(this.config).main_loop_pause;
+                try {
+                    await this.updateStates();
+                    if (this.consecutiveErrors > 0) {
+                        this.log.info(`connection to ${this.config.hostname} restored after ${this.consecutiveErrors} failed poll cycle(s)`);
+                    }
+                    this.consecutiveErrors = 0;
+                }
+                catch (e) {
+                    this.consecutiveErrors++;
+                    if (this.solaredge) {
+                        this.solaredge.lastConnectedTimestamp = 0;
+                    }
+                    const reason = (0, connectionPolicy_1.formatError)(e);
+                    if ((0, connectionPolicy_1.shouldLogConnectionError)(this.consecutiveErrors)) {
+                        this.log.error(`poll cycle failed (${this.consecutiveErrors} in a row): ${reason}`);
+                    }
+                    else {
+                        this.log.debug(`poll cycle failed (${this.consecutiveErrors} in a row): ${reason}`);
+                    }
+                    delay = (0, connectionPolicy_1.backoffDelayMs)(delay, this.consecutiveErrors);
+                }
+                this.log.debug("sleep: " + delay);
+                await this.sleep(delay);
             }
-            catch (e) {
-                this.consecutiveErrors++;
-                if (this.solaredge) {
-                    this.solaredge.lastConnectedTimestamp = 0;
-                }
-                const reason = (0, connectionPolicy_1.formatError)(e);
-                if ((0, connectionPolicy_1.shouldLogConnectionError)(this.consecutiveErrors)) {
-                    this.log.error(`poll cycle failed (${this.consecutiveErrors} in a row): ${reason}`);
-                }
-                else {
-                    this.log.debug(`poll cycle failed (${this.consecutiveErrors} in a row): ${reason}`);
-                }
-                delay = (0, connectionPolicy_1.backoffDelayMs)(delay, this.consecutiveErrors);
-            }
-            this.log.debug("sleep: " + delay);
-            await this.sleep(delay);
         }
-        this.log.debug("mainloop: end");
+        finally {
+            // resolve even when the loop exits through an error
+            (_a = this.mainLoopFinishedResolve) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.log.debug("mainloop: end");
+        }
     }
     /** Reports a broken configuration once per change instead of once per second. */
     reportConfigProblem(problem) {
